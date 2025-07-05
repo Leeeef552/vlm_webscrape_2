@@ -1,14 +1,20 @@
 from __future__ import annotations
 import logging
 import re
+import asyncio
 from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin, urlsplit, urlunsplit
 from bs4 import BeautifulSoup, NavigableString
-from bs4.element import Tag
-from playwright.sync_api import (TimeoutError as PlaywrightTimeoutError, sync_playwright)
+from playwright.async_api import (
+    async_playwright,
+    Playwright,
+    Browser,
+    BrowserContext,
+)
 import json
 from datetime import datetime, timezone
 import os
+
 
 # -----------------------------------------------------------------------------
 # Helper classes (TextExtractor & ImageValidator remain largely unchanged)
@@ -252,14 +258,34 @@ class ImageValidator:
 # -----------------------------------------------------------------------------
 
 class ImageMetadataExtractor:
-    """Extract image metadata from a list of URLs using Playwright."""
+    """Extract image and markdown content using async Playwright and asyncio."""
 
-    def __init__(self):
+    def __init__(self, concurrency: int = 4):
         self.text_extractor = TextExtractor()
         self.image_validator = ImageValidator()
-        self._seen_urls: set[str] = set()
-        logging.basicConfig(level=logging.INFO, format='[%(asctime)s] [%(levelname)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+        logging.basicConfig(
+            level=logging.INFO,
+            format='[%(asctime)s] [%(levelname)s] %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S',
+        )
         self.logger = logging.getLogger(__name__)
+        self._pw: Optional[Playwright] = None
+        self.browser: Optional[Browser] = None
+        self.semaphore = asyncio.Semaphore(concurrency)
+
+    async def __aenter__(self) -> ImageMetadataExtractor:
+        self._pw = await async_playwright().start()
+        self.browser = await self._pw.chromium.launch(
+            headless=True,
+            args=["--no-sandbox", "--disable-gpu"],
+        )
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        if self.browser:
+            await self.browser.close()
+        if self._pw:
+            await self._pw.stop()
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -287,69 +313,69 @@ class ImageMetadataExtractor:
     # Playwright‑specific helpers
     # .................................................................
 
-    def _click_load_more(self, page, timeout_ms: int = 3000, max_clicks: int = 5):
-        """Click any “load more / show more” buttons until none remain."""
-        clicks = 0
+    async def _click_load_more(self, page) -> None:
+        """Async click any “load more / show more” buttons until none remain."""
         selectors = [
-            "button:has-text(\"load more\")",
-            "button:has-text(\"show more\")",
-            "a:has-text(\"load more\")",
-            "a:has-text(\"show more\")",
+            'button:has-text("load more")',
+            'button:has-text("show more")',
+            'a:has-text("load more")',
+            'a:has-text("show more")',
         ]
-        while clicks < max_clicks:
+        clicks = 0
+        max_clicks = 5
+        for _ in range(max_clicks):
             found = False
             for sel in selectors:
                 locator = page.locator(sel)
-                try:
-                    if locator.count() and locator.first.wait_for(state="visible", timeout=timeout_ms):
-                        locator.first.scroll_into_view_if_needed()
-                        locator.first.click()
+                count = await locator.count()
+                if count:
+                    try:
+                        await locator.first.wait_for(state="visible", timeout=3000)
+                        await locator.first.scroll_into_view_if_needed()
+                        await locator.first.click()
                         clicks += 1
                         found = True
-                        page.wait_for_timeout(1000)
-                        self.logger.info("Playwright clicked a 'load more' button (%s/%s)", clicks, max_clicks)
+                        await page.wait_for_timeout(1000)
+                        self.logger.info("Clicked 'load more' button %s/%s", clicks, max_clicks)
                         break
-                except PlaywrightTimeoutError:
-                    continue
+                    except Exception:
+                        continue
             if not found:
                 break
 
-    def _fetch_page_content(self, url: str) -> Optional[BeautifulSoup]:
-        """Return BeautifulSoup of fully rendered page using Playwright."""
-        try:
-            with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-gpu"])
-                context = browser.new_context(
-                    viewport={"width": 1920, "height": 1080},
-                    user_agent=(
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                        "AppleWebKit/537.36 (KHTML, like Gecko) "
-                        "Chrome/115.0.0.0 Safari/537.36"
-                    ),
-                )
-                page = context.new_page()
-                page.goto(url, wait_until="domcontentloaded", timeout=30000)
-
-                # 1) Click expandable buttons
-                self._click_load_more(page)
-
-                # 2) Infinite scroll until height stabilises or max iterations
-                last_height = -1
-                for _ in range(20):  # safety cap
-                    height = page.evaluate("document.body.scrollHeight")
-                    if height == last_height:
+    async def _fetch_page_content(self, url: str) -> Optional[BeautifulSoup]:
+        """Render a URL in a fresh context, then return its BeautifulSoup asynchronously."""
+        if not self.browser:
+            raise RuntimeError("Browser not started. Use 'async with'.")
+        async with self.semaphore:
+            context: BrowserContext = await self.browser.new_context(
+                viewport={"width": 1920, "height": 1080},
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/115.0.0.0 Safari/537.36"
+                ),
+            )
+            page = await context.new_page()
+            try:
+                await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                await self._click_load_more(page)
+                last_h = -1
+                for _ in range(20):
+                    h = await page.evaluate("document.body.scrollHeight")
+                    if h == last_h:
                         break
-                    last_height = height
-                    page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                    page.wait_for_timeout(1500)
+                    last_h = h
+                    await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                    await page.wait_for_timeout(1500)
+                html = await page.content()
+            except Exception as e:
+                self.logger.error("Failed to fetch %s: %s", url, e)
+                html = None
+            finally:
+                await context.close()
 
-                html = page.content()
-                browser.close()
-
-            return BeautifulSoup(html, "html.parser")
-        except Exception as e:
-            self.logger.error("Failed to fetch %s: %s", url, e)
-            return None
+        return BeautifulSoup(html, "html.parser") if html else None
         
     # .................................................................
     # Extraction logic (unchanged except for fetch implementation)
@@ -436,15 +462,20 @@ class ImageMetadataExtractor:
     # Public API
     # ------------------------------------------------------------------
 
-    def extract_image_data_from_url(self, url: str) -> List[Dict[str, Any]]:
-        self.logger.info(f"Extracting image content from: {url}")
-        soup = self._fetch_page_content(url)
+    async def extract_both_from_url(self, url: str) -> Dict[str, Any]:
+        """Extract both images and markdown from a URL in one operation"""
+        self.logger.info(f"Extracting content from: {url}")
+        soup = await self._fetch_page_content(url)
         if not soup:
-            return []
+            return {"images": [], "markdown": {}}
+        
+        # Extract both in single pass
+        markdown_data = self._extract_markdown_content(url, soup)
         page_title = soup.title.get_text(strip=True) if soup.title else ""
         page_summary = self.text_extractor.get_page_summary(soup)
-        grouped: Dict[str, List[Dict[str, Any]]] = {}
-
+        
+        # Image extraction (same as before)
+        grouped = {}
         for img in soup.find_all("img"):
             data = self._extract_image_data(img, url, page_title, page_summary)
             if not data:
@@ -454,75 +485,41 @@ class ImageMetadataExtractor:
             data["_w"], data["_h"] = w, h
             grouped.setdefault(key, []).append(data)
 
-        results: List[Dict[str, Any]] = []
+        images = []
         for group in grouped.values():
             best = max(group, key=lambda d: d["_w"] * d["_h"])
             best.pop("_w", None)
             best.pop("_h", None)
-            results.append(best)
-        return results
+            images.append(best)
 
-    def extract_image_data_from_urls(self, urls: List[str]) -> List[Dict[str, Any]]:
-        all_grouped: Dict[str, List[Dict[str, Any]]] = {}
-        for url in urls:
-            self.logger.info(f"Extracting image content from: {url}")
-            soup = self._fetch_page_content(url)
-            if not soup:
+        return {"images": images, "markdown": markdown_data}
+
+    # New batch method
+    async def extract_all_content(self, urls: List[str]) -> Dict[str, List[Any]]:
+        """Extract both images and markdown for all URLs concurrently"""
+        self.logger.info(f"Extracting content from {len(urls)} URLs")
+        tasks = [self.extract_both_from_url(u) for u in urls]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Separate results
+        all_images = []
+        all_markdowns = []
+        for res in results:
+            if isinstance(res, Exception):
+                self.logger.error(f"Extraction failed: {res}")
                 continue
-            page_title = soup.title.get_text(strip=True) if soup.title else ""
-            page_summary = self.text_extractor.get_page_summary(soup)
-            for img in soup.find_all("img"):
-                data = self._extract_image_data(img, url, page_title, page_summary)
-                if not data:
-                    continue
-                key = self._canonicalise_url(data["image_url"])
-                w, h = self._parse_resolution_from_url(data["image_url"])
-                data["_w"], data["_h"] = w, h
-                all_grouped.setdefault(key, []).append(data)
-
-        results: List[Dict[str, Any]] = []
-        for group in all_grouped.values():
-            best = max(group, key=lambda d: d["_w"] * d["_h"])
-            best.pop("_w", None)
-            best.pop("_h", None)
-            results.append(best)
-        return results
-
-    def extract_markdown_from_url(self, url: str) -> List[Dict[str, Any]]:
-        """Extract text content from single URLs."""        
-        self.logger.info(f"Extracting markdown content from: {url}")
-        soup = self._fetch_page_content(url)
-        if not soup:
-            return []
+            all_images.extend(res["images"])
+            all_markdowns.append(res["markdown"])
         
-        text_data = self._extract_markdown_content(url, soup)
-        
-        return text_data
+        return {"images": all_images, "markdowns": all_markdowns}
 
-    def extract_markdown_from_urls(self, urls: List[str]) -> List[Dict[str, Any]]:
-        """Extract text content from multiple URLs."""
-        results: List[Dict[str, Any]] = []
-        
-        for url in urls:
-            self.logger.info(f"Extracting markdown content from: {url}")
-            soup = self._fetch_page_content(url)
-            if not soup:
-                continue
-            
-            text_data = self._extract_markdown_content(url, soup)
-            results.append(text_data)
-        
-        return results
 
-    
-if __name__ == "__main__":
+async def main():
     import time
     start_time = time.time()
     print("Starting the process...")
-
-    extractor = ImageMetadataExtractor()
-
-    URL = [
+    
+    URLS = [
         "https://strictlysingapore.com/tourist-tips/",
         "https://www.visitsingapore.com/",
         "https://migrationology.com/singapore-food/",
@@ -530,18 +527,22 @@ if __name__ == "__main__":
         "https://bbcincorp.com/sg/articles/singapore-government-agencies",
         "https://www.sutrahr.com/recruitment-agencies-in-singapore/"
     ]
-    
-    images = extractor.extract_image_data_from_urls(URL)
-    markdown = extractor.extract_markdown_from_urls(URL)
+
+    async with ImageMetadataExtractor(concurrency=3) as extractor:
+        # Single extraction pass for all URLs
+        results = await extractor.extract_all_content(URLS)
+        images = results["images"]
+        markdown = results["markdowns"]
 
     images_file_dir = "../storage/images_metadata"
-    images_outfile = f"{images_file_dir}/images_metadata.json"
+    images_outfile = f"{images_file_dir}/images_metadata_async.json"
     os.makedirs(images_file_dir, exist_ok=True)
-    with open(images_outfile, "w", encoding="utf-8") as fp:
-        json.dump(images, fp, ensure_ascii=False, indent=2)
-
+    with open(images_outfile, "w", encoding="utf-8") as f:
+        json.dump(images, f, ensure_ascii=False, indent=2)
+    
+    
     markdown_file_dir = "../storage/text_markdown"
-    markdown_outfile = f"{markdown_file_dir}/text_markdown.json"
+    markdown_outfile = f"{markdown_file_dir}/text_markdown_async.json"
     os.makedirs(markdown_file_dir, exist_ok=True)
     with open(markdown_outfile, "w", encoding="utf-8") as fp:
         json.dump(markdown, fp, ensure_ascii=False, indent=2)
@@ -550,3 +551,6 @@ if __name__ == "__main__":
     print(f"extracted {len(images)} images")
     print(f"extracted {len(markdown)} pages")
     print(f"Process completed in {end_time - start_time:.2f} seconds.")
+
+if __name__ == "__main__":
+    asyncio.run(main())
