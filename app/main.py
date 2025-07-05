@@ -1,9 +1,9 @@
 import logging
 from .configs.config import get_config
-from .core.links_scraper import LinkScraper
-from .core.content_process import ImageMetadataExtractor
+from .core.search_engine import Search_Engine
+from .core.scrape_content import ImageMetadataExtractor
 
-CONFIG_FILEPATH = "Scraping/configs/config.json"
+CONFIG_FILEPATH = "app/configs/config.json"
 
 
 # Set up logging
@@ -54,7 +54,7 @@ def main():
     
     # Initialize scraper
     logger.info("Initialising Search...")
-    scraper = LinkScraper(config)
+    scraper = Search_Engine(config)
     
     # Process each transformed query
     total_results = 0
@@ -66,11 +66,11 @@ def main():
     logger.info(f"Scraping completed! Total new links found: {total_results}")
 
 
-    # ------------------------------------------------------------------
-    # Content Scraping
-    # ------------------------------------------------------------------
-    logger.info("Initialising Webcrawl...")
-    with open
+    # # ------------------------------------------------------------------
+    # # Content Scraping
+    # # ------------------------------------------------------------------
+    # logger.info("Initialising Webcrawl...")
+    # with open
 
 
 

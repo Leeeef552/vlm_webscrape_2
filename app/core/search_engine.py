@@ -7,7 +7,7 @@ from duckduckgo_search import DDGS
 import tldextract
 from ..configs.config import ScraperConfig
 
-class LinkScraper:
+class Search_Engine:
     def __init__(self, config: ScraperConfig):
         self.config = config
         self.ddgs = DDGS(timeout=config.timeout)

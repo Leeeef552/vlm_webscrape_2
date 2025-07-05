@@ -16,11 +16,6 @@ from datetime import datetime, timezone
 import os
 
 
-# -----------------------------------------------------------------------------
-# Helper classes (TextExtractor & ImageValidator remain largely unchanged)
-# -----------------------------------------------------------------------------
-
-
 class TextExtractor:
     """Handles text extraction from HTML elements."""
 

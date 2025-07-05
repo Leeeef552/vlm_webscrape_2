@@ -5,7 +5,7 @@
   "timelimit": 3,
   "max_results": 50,
   "timeout": 3,
-  "base_dir": "Scraping/storage/raw_links",
-  "db_dir": "Scraping/storage/raw_links/db_link_hashing/"
+  "base_dir": "app/storage/raw_links",
+  "db_dir": "app/storage/raw_links/db_link_hashing/"
 }
 
