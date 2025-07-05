@@ -1,0 +1,11 @@
+{
+  "query": "singapore",
+  "region": "wt-wt",
+  "safesearch": "Moderate",
+  "timelimit": 3,
+  "max_results": 50,
+  "timeout": 3,
+  "base_dir": "Scraping/storage/raw_links",
+  "db_dir": "Scraping/storage/raw_links/db_link_hashing/"
+}
+
