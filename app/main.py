@@ -18,11 +18,11 @@ def transform_query(base_query: str) -> list[str]:
     # Example query transformations - replace with your actual logic
     transformations = [
         base_query,
-        f"{base_query} tutorial",
-        f"{base_query} guide",
-        f"{base_query} examples",
-        f"best {base_query}",
-        f"{base_query} tips"
+        f"{base_query} foods",
+        f"{base_query} locations",
+        f"{base_query} landmarks",
+        f"best things to do {base_query} ",
+        f"{base_query} travel tips"
     ]
     return transformations
 
@@ -57,24 +57,10 @@ def main():
     scraper = Search_Engine(config)
     
     # Process each transformed query
-    total_results = 0
-    for i, query in enumerate(transformed_queries, 1):
-        logger.info(f"Processing query {i}/{len(transformed_queries)}: '{query}'")
-        results_count = scraper.search_and_store(query)
-        total_results += results_count
+    logger.info(f"Processing query: '{config.query}'")
+    results_count = scraper.search_and_store_batch(transformed_queries)
     
-    logger.info(f"Scraping completed! Total new links found: {total_results}")
-
-
-    # # ------------------------------------------------------------------
-    # # Content Scraping
-    # # ------------------------------------------------------------------
-    # logger.info("Initialising Webcrawl...")
-    # with open
-
-
-
-
+    logger.info(f"Scraping completed! Total new links found: {results_count}")
 
 if __name__ == "__main__":
     main()
