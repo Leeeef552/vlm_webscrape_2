@@ -2,16 +2,16 @@ import os
 import shelve
 import json
 import time
+import requests
 from datetime import datetime
-from duckduckgo_search import DDGS
 import tldextract
 from ..configs.config import ScraperConfig
 
 class Search_Engine:
     def __init__(self, config: ScraperConfig):
         self.config = config
-        self.ddgs = DDGS(timeout=config.timeout)
-
+        self.searx_url = "http://localhost:8124/search"  # Fixed SearXNG URL
+        
         # Ensure folders exist
         os.makedirs(config.base_dir, exist_ok=True)
         os.makedirs(config.db_dir, exist_ok=True)
@@ -23,11 +23,24 @@ class Search_Engine:
         self.jsonl_path = os.path.join(config.base_dir, 'links.jsonl')
         self.shelf_path = os.path.join(config.db_dir, 'link_hash_db')
 
-
-    def get_registered_domain(self, url):
-        ext = tldextract.extract(url)
-        return f"{ext.domain}.{ext.suffix}" if ext.suffix else ext.domain
-    
+    def _make_searx_request(self, query: str, page: int = 1):
+        """Make a single request to SearXNG API."""
+        params = {
+            "q": query,
+            "format": "json",
+            "language": self.config.language,
+            "categories": "general",  # Fixed parameter
+            "pageno": page,
+            "time_range": self.config.time_range
+        }
+        
+        try:
+            resp = requests.get(self.searx_url, params=params, timeout=self.config.timeout)
+            resp.raise_for_status()
+            return resp.json().get("results", [])
+        except requests.exceptions.RequestException as e:
+            print(f"[ERROR] Request failed: {e}")
+            return []
 
     def search_and_store(self, query: str):
         """Search and store links for a specific query, with gentle rate-limiting and progress save."""
@@ -36,67 +49,63 @@ class Search_Engine:
         skipped = 0
 
         with shelve.open(self.shelf_path) as shelf, open(self.jsonl_path, 'a', encoding='utf-8') as jsonl_file:
-            # Ensure we have an iterator regardless of return type
-            iterator = iter(self.ddgs.text(
-                keywords=query,
-                region=self.config.region,
-                safesearch=self.config.safesearch,
-                timelimit=self.config.timelimit,
-                max_results=self.config.max_results,
-            ))
+            # Iterate through pages
+            for page in range(1, self.config.pages + 1):
+                print(f"[INFO] Processing page {page}/{self.config.pages}")
+                
+                results = self._make_searx_request(query, page)
+                if not results:
+                    print(f"[WARNING] No results found for page {page}")
+                    continue
 
-            while True:
-                try:
-                    r = next(iterator)
-                except StopIteration:
-                    break
-                except Exception as e:
-                    msg = str(e).lower()
-                    if 'rate limit' in msg or '429' in msg:
-                        print(f"[INFO] Rate limited (error: {e}). Waiting for {self.delay} seconds before retrying...")
-                        time.sleep(self.delay)
+                for hit in results:
+                    url = hit.get('url')
+                    if not url:
+                        print("[WARNING] Skipping result with no URL")
                         continue
-                    else:
-                        raise
 
-                url = r.get('href') or r.get('link')
-                if not url:
-                    print("[WARNING] Skipping result with no URL")
-                    continue
+                    # Check for exact URL match
+                    if url in shelf:
+                        skipped += 1
+                        continue
 
-                reg_domain = self.get_registered_domain(url)
-                if reg_domain in shelf:
-                    skipped += 1
-                    continue
+                    # Add a timestamp and metadata
+                    timestamp = datetime.utcnow().isoformat()
+                    
+                    # Create a result object similar to DuckDuckGo format
+                    result = {
+                        'title': hit.get('title', ''),
+                        'href': url,
+                        'content': hit.get('content', ''),
+                        'stored_at': timestamp,
+                        'original_query': query,
+                        'page': page,
+                        'engine': hit.get('engine', 'unknown')
+                    }
 
+                    # Write the full SearXNG result to JSONL
+                    jsonl_file.write(json.dumps(result, ensure_ascii=False) + '\n')
+                    jsonl_file.flush()
+                    os.fsync(jsonl_file.fileno())
 
-                # Add a timestamp and metadata
-                timestamp = datetime.utcnow().isoformat()
-                r['stored_at'] = timestamp
-                r['original_query'] = query
+                    # Store minimal data in shelf to avoid duplicates
+                    shelf[url] = {
+                        'stored_at': timestamp,
+                        'title': hit.get('title', ''),
+                        'original_query': query
+                    }
+                    shelf.sync()
 
-                # Write the full DuckDuckGo result to JSONL
-                jsonl_file.write(json.dumps(r, ensure_ascii=False) + '\n')
-                jsonl_file.flush()
-                os.fsync(jsonl_file.fileno())
+                    count += 1
 
-                # Store minimal data in shelf to avoid duplicates
-                shelf[url] = {
-                    'stored_at': timestamp,
-                    'title': r.get('title', ''),
-                    'original_query': query
-                }
-                shelf.sync()
-
-                count += 1
-                # Fixed delay to avoid overwhelming the API
+                # Fixed delay between pages to avoid overwhelming the API
                 time.sleep(self.delay)
 
         print(f"[INFO] Done. Added {count} new links. Skipped {skipped} duplicates.")
         return count
 
     def search_and_store_batch(self, queries: list[str]):
-        """Search and store links for multiple queries using the same DDGS instance."""
+        """Search and store links for multiple queries."""
         print(f"[INFO] Starting batch search for {len(queries)} queries...")
         
         total_added = 0
@@ -110,60 +119,56 @@ class Search_Engine:
                 query_skipped = 0
                 
                 try:
-                    # Use the same DDGS instance for all queries
-                    iterator = iter(self.ddgs.text(
-                        keywords=query,
-                        region=self.config.region,
-                        safesearch=self.config.safesearch,
-                        timelimit=self.config.timelimit,
-                        max_results=self.config.max_results,
-                    ))
+                    # Iterate through pages for this query
+                    for page in range(1, self.config.pages + 1):
+                        print(f"[INFO] Processing page {page}/{self.config.pages} for query '{query}'")
+                        
+                        results = self._make_searx_request(query, page)
+                        if not results:
+                            print(f"[WARNING] No results found for page {page}")
+                            continue
 
-                    while True:
-                        try:
-                            r = next(iterator)
-                        except StopIteration:
-                            break
-                        except Exception as e:
-                            msg = str(e).lower()
-                            if 'rate limit' in msg or '429' in msg:
-                                print(f"[INFO] Rate limited (error: {e}). Waiting for {self.delay} seconds before retrying...")
-                                time.sleep(self.delay)
+                        for hit in results:
+                            url = hit.get('url')
+                            if not url:
+                                print("[WARNING] Skipping result with no URL")
                                 continue
-                            else:
-                                print(f"[ERROR] Error processing result for query '{query}': {e}")
-                                break
 
-                        url = r.get('href') or r.get('link')
-                        if not url:
-                            print("[WARNING] Skipping result with no URL")
-                            continue
+                            # Check for exact URL match
+                            if url in shelf:
+                                query_skipped += 1
+                                continue
 
-                        reg_domain = self.get_registered_domain(url)
-                        if reg_domain in shelf:
-                            query_skipped += 1
-                            continue
+                            # Add a timestamp and metadata
+                            timestamp = datetime.utcnow().isoformat()
+                            
+                            # Create a result object similar to DuckDuckGo format
+                            result = {
+                                'title': hit.get('title', ''),
+                                'href': url,
+                                'content': hit.get('content', ''),
+                                'stored_at': timestamp,
+                                'original_query': query,
+                                'page': page,
+                                'engine': hit.get('engine', 'unknown')
+                            }
 
-                        # Add a timestamp and metadata
-                        timestamp = datetime.utcnow().isoformat()
-                        r['stored_at'] = timestamp
-                        r['original_query'] = query
+                            # Write the full SearXNG result to JSONL
+                            jsonl_file.write(json.dumps(result, ensure_ascii=False) + '\n')
+                            jsonl_file.flush()
+                            os.fsync(jsonl_file.fileno())
 
-                        # Write the full DuckDuckGo result to JSONL
-                        jsonl_file.write(json.dumps(r, ensure_ascii=False) + '\n')
-                        jsonl_file.flush()
-                        os.fsync(jsonl_file.fileno())
+                            # Store minimal data in shelf to avoid duplicates
+                            shelf[url] = {
+                                'stored_at': timestamp,
+                                'title': hit.get('title', ''),
+                                'original_query': query
+                            }
+                            shelf.sync()
 
-                        # Store minimal data in shelf to avoid duplicates
-                        shelf[url] = {
-                            'stored_at': timestamp,
-                            'title': r.get('title', ''),
-                            'original_query': query
-                        }
-                        shelf.sync()
+                            query_added += 1
 
-                        query_added += 1
-                        # Fixed delay to avoid overwhelming the API
+                        # Fixed delay between pages to avoid overwhelming the API
                         time.sleep(self.delay)
 
                     print(f"[INFO] Query '{query}' completed. Added {query_added} new links. Skipped {query_skipped} duplicates.")
@@ -187,7 +192,7 @@ class Search_Engine:
         }
 
     def iter_records(self):
-        """Yield all stored DuckDuckGo results from the JSONL file."""
+        """Yield all stored SearXNG results from the JSONL file."""
         try:
             with open(self.jsonl_path, 'r', encoding='utf-8') as f:
                 for line in f:

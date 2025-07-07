@@ -538,7 +538,7 @@ engines:
     # add "list" to the array to get results in the results list
     display_type: ["infobox"]
     categories: [general]
-    disabled: true
+    # disabled: true
 
   - name: bilibili
     engine: bilibili
@@ -548,7 +548,7 @@ engines:
   - name: bing
     engine: bing
     shortcut: bi
-    disabled: true
+    # disabled: true
 
   - name: bing images
     engine: bing_images
@@ -835,7 +835,7 @@ engines:
   - name: duckduckgo
     engine: duckduckgo
     shortcut: ddg
-    disabled: true
+    # disabled: true
 
   - name: duckduckgo images
     engine: duckduckgo_extra

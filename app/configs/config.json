@@ -1,11 +1,9 @@
 {
   "query": "Singapore",
-  "region": "wt-wt",
-  "safesearch": "Moderate",
-  "timelimit": 3,
-  "max_results": 10,
+  "language": "en",
+  "pages": 3,
+  "time_range": "year",
   "timeout": 3,
   "base_dir": "app/storage/raw_links",
   "db_dir": "app/storage/raw_links/db_link_hashing"
 }
-

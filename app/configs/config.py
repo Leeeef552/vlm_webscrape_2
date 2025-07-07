@@ -13,14 +13,15 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ScraperConfig:
-    """Configuration for the Link Scraper."""
-    # defaults
+    """Configuration for the Link Scraper using SearXNG."""
+    # SearXNG configurable parameters
     query: str = ""
-    region: str = "wt-wt"
-    safesearch: str = "Moderate"
-    timelimit: Optional[str] = "1y"
-    max_results: int = 50
-    timeout: int = 3
+    language: str = "en"
+    pages: int = 1
+    time_range: str = "year"
+    
+    # Fixed parameters
+    timeout: int = 4
     base_dir: str = "/home/leeeefun681/volume/eefun/webscraping/webscraping/storage/links"
     db_dir: str = "/home/leeeefun681/volume/eefun/webscraping/webscraping/storage/links/db"
 
@@ -50,12 +51,11 @@ def get_config(json_path) -> Optional[ScraperConfig]:
 def create_sample_config(json_path: str = "config.json"):
     """Create a sample configuration JSON file."""
     sample_config = {
-        "query": "python web scraping",
-        "region": "wt-wt",
-        "safesearch": "Off",
-        "timelimit": None,
-        "max_results": 50,
-        "timeout": 3,
+        "query": "Singapore",
+        "language": "en",
+        "pages": 3,
+        "time_range": "year",
+        "timeout": 4,
         "base_dir": "/home/leeeefun681/volume/eefun/webscraping/webscraping/storage/links",
         "db_dir": "/home/leeeefun681/volume/eefun/webscraping/webscraping/storage/links/db"
     }
