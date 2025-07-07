@@ -1,22 +1,25 @@
-# Ignore virtual environment
+# Virtual environments
 venv/
+.venv/
 
-# Ignore __pycache__ directories
+# VS Code workspace settings
+.vscode/
+
+# Environment files
+.env
+
+# Byte-compiled / optimized / DLL files
 __pycache__/
-
-# Ignore Python compiled files
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
 
-# Ignore Jupyter Notebook checkpoints
-*.ipynb_checkpoints
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
 
-# Retain directory structure by ignoring all files but not directories
-*/
-!*/
-
-# ignore files
+# Database files
 *.db
+
+# JSON-based data
 *.json
 *.jsonl
