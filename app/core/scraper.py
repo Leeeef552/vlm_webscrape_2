@@ -1,5 +1,4 @@
 from __future__ import annotations
-import logging
 import re
 import asyncio
 from typing import Any, Dict, List, Optional
@@ -14,11 +13,11 @@ from playwright.async_api import (
 import json
 from datetime import datetime, timezone
 import os
-
+from ..configs.config import ScraperConfig
+from ..utils.logger import logger
 
 class TextExtractor:
     """Handles text extraction from HTML elements."""
-
     @staticmethod
     def normalize_text(text: str) -> str:
         """Normalize text by lower‑casing and collapsing whitespace."""
@@ -47,7 +46,6 @@ class TextExtractor:
     @staticmethod
     def get_surrounding_text(img_tag, max_chars: int = 1000) -> str:
         """Grab figcaptions and nearby text (prev/next sibling) for context."""
-
         def nearby(start, direction):
             collected: List[str] = []
             current = start
@@ -65,24 +63,9 @@ class TextExtractor:
                         continue
                     break
 
-                text = (
-                    current.strip()
-                    if isinstance(current, NavigableString)
-                    else (
-                        current.get_text(strip=True)
-                        if current.name in [
-                            "p",
-                            "div",
-                            "h1",
-                            "h2",
-                            "h3",
-                            "h4",
-                            "h5",
-                            "h6",
-                        ]
-                        else ""
-                    )
-                )
+                text = current.strip() if isinstance(current, NavigableString) \
+                    else current.get_text(strip=True) \
+                    if current.name in ["p", "div", "h1", "h2", "h3", "h4", "h5", "h6"] else ""
                 if text and len(text) > 10:
                     collected.append(text)
                     break
@@ -206,7 +189,6 @@ class TextExtractor:
 
 class ImageValidator:
     """Validates image URLs and filters out ads/placeholders."""
-
     AD_DOMAIN_PATTERNS = [
         re.compile(
             r"\.(doubleclick\.net|googlesyndication\.com|adservice\.google\.com|"
@@ -248,27 +230,17 @@ class ImageValidator:
         return False
 
 
-# -----------------------------------------------------------------------------
-# Main extractor class (Playwright‑based)
-# -----------------------------------------------------------------------------
-
-class ImageMetadataExtractor:
+class Scraper:
     """Extract image and markdown content using async Playwright and asyncio."""
-
-    def __init__(self, concurrency: int = 4):
+    def __init__(self, ScraperConfig):
         self.text_extractor = TextExtractor()
         self.image_validator = ImageValidator()
-        logging.basicConfig(
-            level=logging.INFO,
-            format='[%(asctime)s] [%(levelname)s] %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S',
-        )
-        self.logger = logging.getLogger(__name__)
         self._pw: Optional[Playwright] = None
         self.browser: Optional[Browser] = None
-        self.semaphore = asyncio.Semaphore(concurrency)
+        self.scraper_config = ScraperConfig
+        self.semaphore = asyncio.Semaphore(self.scraper_config.concurrency)
 
-    async def __aenter__(self) -> ImageMetadataExtractor:
+    async def __aenter__(self) -> Scraper:
         self._pw = await async_playwright().start()
         self.browser = await self._pw.chromium.launch(
             headless=True,
@@ -282,9 +254,28 @@ class ImageMetadataExtractor:
         if self._pw:
             await self._pw.stop()
 
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
+    # --------------------- Internal helpers ----------------------------
+    
+    def _load_links_from_jsonl(self, file_path: str) -> None:
+        """Load all 'href' values from a JSONL file."""
+        try:
+            with open(file_path, "r", encoding="utf-8") as file:
+                for line_number, line in enumerate(file, 1):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        data = json.loads(line)
+                        if "href" in data:
+                            self.links.append(data["href"])
+                        else:
+                            print(f"[Line {line_number}] Missing 'href' key: {line}")
+                    except json.JSONDecodeError as e:
+                        print(f"[Line {line_number}] Invalid JSON: {e}")
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Links file not found: {file_path}")
+        except Exception as e:
+            raise RuntimeError(f"Failed to read links file: {e}")
 
     @staticmethod
     def _canonicalise_url(url: str) -> str:
@@ -303,10 +294,6 @@ class ImageMetadataExtractor:
         if m:
             return int(m.group(1)), int(m.group(2))
         return 0, 0
-
-    # .................................................................
-    # Playwright‑specific helpers
-    # .................................................................
 
     async def _click_load_more(self, page) -> None:
         """Async click any “load more / show more” buttons until none remain."""
@@ -331,7 +318,7 @@ class ImageMetadataExtractor:
                         clicks += 1
                         found = True
                         await page.wait_for_timeout(1000)
-                        self.logger.info("Clicked 'load more' button %s/%s", clicks, max_clicks)
+                        logger.info("Clicked 'load more' button %s/%s", clicks, max_clicks)
                         break
                     except Exception:
                         continue
@@ -365,16 +352,14 @@ class ImageMetadataExtractor:
                     await page.wait_for_timeout(1500)
                 html = await page.content()
             except Exception as e:
-                self.logger.error("Failed to fetch %s: %s", url, e)
+                logger.error("Failed to fetch %s: %s", url, e)
                 html = None
             finally:
                 await context.close()
 
         return BeautifulSoup(html, "html.parser") if html else None
         
-    # .................................................................
-    # Extraction logic (unchanged except for fetch implementation)
-    # .................................................................
+    # .........................Extraction logic ...........................
 
     def _extract_image_data(self, img_tag, page_url: str, page_title: str, page_summary: str) -> Dict[str, Any]:
         """Extract metadata from a single <img>/<picture> element."""
@@ -451,15 +436,12 @@ class ImageMetadataExtractor:
             "text_content": text_content,
             "extracted_at": datetime.now(timezone.utc).isoformat() + "Z",
         }
-    
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
+    # ----------------------------Public API------------------------------
 
-    async def extract_both_from_url(self, url: str) -> Dict[str, Any]:
+    async def _extract_both_from_url(self, url: str) -> Dict[str, Any]:
         """Extract both images and markdown from a URL in one operation"""
-        self.logger.info(f"Extracting content from: {url}")
+        logger.info(f"Extracting content from: {url}")
         soup = await self._fetch_page_content(url)
         if not soup:
             return {"images": [], "markdown": {}}
@@ -492,8 +474,9 @@ class ImageMetadataExtractor:
     # New batch method
     async def extract_all_content(self, urls: List[str]) -> Dict[str, List[Any]]:
         """Extract both images and markdown for all URLs concurrently"""
-        self.logger.info(f"Extracting content from {len(urls)} URLs")
-        tasks = [self.extract_both_from_url(u) for u in urls]
+        logger.info(f"Extracting content from {len(urls)} URLs")
+        
+        tasks = [self._extract_both_from_url(u) for u in urls]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         
         # Separate results
@@ -501,51 +484,74 @@ class ImageMetadataExtractor:
         all_markdowns = []
         for res in results:
             if isinstance(res, Exception):
-                self.logger.error(f"Extraction failed: {res}")
+                logger.error(f"Extraction failed: {res}")
                 continue
             all_images.extend(res["images"])
             all_markdowns.append(res["markdown"])
         
+        # Handle file writing with error catching
+        try:
+            with open(self.scraper_config.images_outfile, "w", encoding="utf-8") as f:
+                json.dump(all_images, f, ensure_ascii=False, indent=2)
+            logger.info(f"Extracted {len(all_images)} images")
+        except FileNotFoundError:
+            logger.error(f"FileNotFoundError: Check images_outfile path '{self.scraper_config.images_outfile}' in your config.")
+        except OSError as e:
+            logger.error(f"OSError writing images_outfile '{self.scraper_config.images_outfile}': {e}")
+        except TypeError as e:
+            logger.error(f"JSON encoding error while writing images_outfile: {e}")
+
+        try:
+            with open(self.scraper_config.markdown_outfile, "w", encoding="utf-8") as f:
+                json.dump(all_markdowns, f, ensure_ascii=False, indent=2)
+            logger.info(f"Processed {len(all_markdowns)} webpages")
+        except FileNotFoundError:
+            logger.error(f"FileNotFoundError: Check markdown_outfile path '{self.scraper_config.markdown_outfile}' in your config.")
+        except OSError as e:
+            logger.error(f"OSError writing markdown_outfile '{self.scraper_config.markdown_outfile}': {e}")
+        except TypeError as e:
+            logger.error(f"JSON encoding error while writing markdown_outfile: {e}")
+        
         return {"images": all_images, "markdowns": all_markdowns}
+        
 
-
-async def main():
-    import time
-    start_time = time.time()
-    print("Starting the process...")
+# async def main(): 
+#     import time
+#     start_time = time.time()
+#     print("Starting the process...")
     
-    URLS = [
-        "https://strictlysingapore.com/tourist-tips/",
-        "https://www.visitsingapore.com/",
-        "https://migrationology.com/singapore-food/",
-        "https://builtinsingapore.com/articles/top-companies-in-singapore",
-        "https://bbcincorp.com/sg/articles/singapore-government-agencies",
-        "https://www.sutrahr.com/recruitment-agencies-in-singapore/"
-    ]
+#     URLS = [
+#         "https://strictlysingapore.com/tourist-tips/",
+#         "https://www.visitsingapore.com/",
+#         "https://migrationology.com/singapore-food/",
+#         "https://builtinsingapore.com/articles/top-companies-in-singapore",
+#         "https://bbcincorp.com/sg/articles/singapore-government-agencies",
+#         "https://www.sutrahr.com/recruitment-agencies-in-singapore/"
+#     ]
 
-    async with ImageMetadataExtractor(concurrency=3) as extractor:
-        # Single extraction pass for all URLs
-        results = await extractor.extract_all_content(URLS)
-        images = results["images"]
-        markdown = results["markdowns"]
+#     async with Scraper(concurrency=3) as extractor:
+#         # Single extraction pass for all URLs
+#         results = await extractor.extract_all_content(URLS)
+#         images = results["images"]
+#         markdown = results["markdowns"]
 
-    images_file_dir = "../storage/images_metadata"
-    images_outfile = f"{images_file_dir}/images_metadata_async.json"
-    os.makedirs(images_file_dir, exist_ok=True)
-    with open(images_outfile, "w", encoding="utf-8") as f:
-        json.dump(images, f, ensure_ascii=False, indent=2)
+#     images_file_dir = "../storage/images_metadata"
+#     images_outfile = f"{images_file_dir}/images_metadata_async.json"
+#     os.makedirs(images_file_dir, exist_ok=True)
+#     with open(images_outfile, "w", encoding="utf-8") as f:
+#         json.dump(images, f, ensure_ascii=False, indent=2)
     
     
-    markdown_file_dir = "../storage/text_markdown"
-    markdown_outfile = f"{markdown_file_dir}/text_markdown_async.json"
-    os.makedirs(markdown_file_dir, exist_ok=True)
-    with open(markdown_outfile, "w", encoding="utf-8") as fp:
-        json.dump(markdown, fp, ensure_ascii=False, indent=2)
+#     markdown_file_dir = "../storage/text_markdown"
+#     markdown_outfile = f"{markdown_file_dir}/text_markdown_async.json"
+#     os.makedirs(markdown_file_dir, exist_ok=True)
+#     with open(markdown_outfile, "w", encoding="utf-8") as fp:
+#         json.dump(markdown, fp, ensure_ascii=False, indent=2)
 
-    end_time = time.time()
-    print(f"extracted {len(images)} images")
-    print(f"extracted {len(markdown)} pages")
-    print(f"Process completed in {end_time - start_time:.2f} seconds.")
+#     end_time = time.time()
+#     print(f"extracted {len(images)} images")
+#     print(f"extracted {len(markdown)} pages")
+#     print(f"Process completed in {end_time - start_time:.2f} seconds.")
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# if __name__ == "__main__":
+#     asyncio.run(main())

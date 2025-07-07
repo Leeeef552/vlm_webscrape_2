@@ -2,66 +2,43 @@ import json
 import logging
 from dataclasses import dataclass
 from typing import Optional
+from ..utils.logger import logger
 
-# Set up logging for this module
-logging.basicConfig(
-    level=logging.INFO,
-    format='[%(asctime)s] [%(levelname)s] %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-logger = logging.getLogger(__name__)
 
 @dataclass
-class ScraperConfig:
-    """Configuration for the Link Scraper using SearXNG."""
-    # SearXNG configurable parameters
+class CrawlerConfig:
     query: str = ""
     language: str = "en"
     pages: int = 1
     time_range: str = "year"
-    
-    # Fixed parameters
     timeout: int = 4
-    base_dir: str = "/home/leeeefun681/volume/eefun/webscraping/webscraping/storage/links"
-    db_dir: str = "/home/leeeefun681/volume/eefun/webscraping/webscraping/storage/links/db"
+    links_file_path: str = "app/storage/raw_links"
+    shelf_path: str = "app/storage/raw_links/db_link_hashing"
 
-def load_config_from_json(json_path: str = "Scraping/configs/config.json") -> Optional[ScraperConfig]:
-    """Load configuration from JSON file."""
+
+@dataclass
+class ScraperConfig:
+    concurrency: int = 4
+    links_file_path: str = "app/storage/raw_links/links.jsonl"
+    images_outfile: str = "app/storage/images_metadata/images_metadata.json"
+    markdown_outfile: str = "app/storage/images_metadata/text_markdown.json"
+
+
+def load_config(file_path):
+    config_classes = {}
     try:
-        with open(json_path, 'r', encoding='utf-8') as f:
-            config_data = json.load(f)
-        
-        return ScraperConfig(**config_data)
-    except FileNotFoundError:
-        logger.error(f"Config file not found: {json_path}")
-        logger.info("Creating a sample config.json file...")
-        create_sample_config(json_path)
+        with open(file_path, "r", encoding="utf-8") as f:
+            config_class_params = json.load(f)
+        config_classes["crawler"] = CrawlerConfig(**config_class_params["crawler"])
+        config_classes["scraper"]  = ScraperConfig(**config_class_params["scraper"])
+        return config_classes
+
+    except FileNotFoundError as e:
+        logger.error(f"{e}: Filepath for `config.json` has errors: {file_path}")
         return None
     except json.JSONDecodeError as e:
-        logger.error(f"Invalid JSON in config file: {e}")
+        logger.error(f"{e}: Invalid JSON in `config.json` file: {file_path}")
         return None
     except TypeError as e:
-        logger.error(f"Invalid configuration parameters: {e}")
+        logger.error(f"{e}: Invalid configuration parameters in config.json: {file_path}")
         return None
-    
-def get_config(json_path) -> Optional[ScraperConfig]:
-    """Return the scraper configuration from JSON file."""
-    return load_config_from_json(json_path)
-
-def create_sample_config(json_path: str = "config.json"):
-    """Create a sample configuration JSON file."""
-    sample_config = {
-        "query": "Singapore",
-        "language": "en",
-        "pages": 3,
-        "time_range": "year",
-        "timeout": 4,
-        "base_dir": "/home/leeeefun681/volume/eefun/webscraping/webscraping/storage/links",
-        "db_dir": "/home/leeeefun681/volume/eefun/webscraping/webscraping/storage/links/db"
-    }
-    
-    with open(json_path, 'w', encoding='utf-8') as f:
-        json.dump(sample_config, f, indent=2, ensure_ascii=False)
-    
-    logger.info(f"Sample config file created: {json_path}")
-    logger.info("Please edit the config.json file and run again.")

@@ -1,66 +1,60 @@
+import argparse
+import asyncio
 import logging
-from .configs.config import get_config
-from .core.search_engine import Search_Engine
-from .core.scrape_content import ImageMetadataExtractor
+from .configs.config import load_config
+from .core.crawler import Crawler
+from .core.scraper import Scraper
+from .utils.logger import logger
+from .utils.utils import load_links
 
-CONFIG_FILEPATH = "app/configs/config.json"
-
-
-# Set up logging
-logging.basicConfig(level=logging.INFO, format='[%(asctime)s] [%(levelname)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-logger = logging.getLogger(__name__)
+def parse_args():
+    parser = argparse.ArgumentParser(description="Web Crawler and Scraper Pipeline")
+    parser.add_argument(
+        "--config", "-c",
+        type=str,
+        default="app/configs/config.json",
+        help="Path to configuration JSON file"
+    )
+    return parser.parse_args()
 
 def transform_query(base_query: str) -> list[str]:
-    """
-    Transform the base query into multiple search variations.
-    This is where your query transformer logic would go.
-    """
-    # Example query transformations - replace with your actual logic
-    transformations = [
+    return [
         base_query,
         f"{base_query} foods",
         f"{base_query} locations",
         f"{base_query} landmarks",
-        f"best things to do {base_query} ",
+        f"best things to do {base_query}",
         f"{base_query} travel tips"
     ]
-    return transformations
 
-def main():
-    """Main orchestration function."""
-    logger.info("Starting Webcrawl...")
-    
-    # Load configuration
-    logger.info("Getting configurations from config file...")
-    config = get_config(CONFIG_FILEPATH)
-    if not config:
-        logger.error("Failed to load configuration.")
+async def main(config_path):
+    logger.info(f"Getting configurations from {config_path}...")
+    config = load_config(config_path)
+    if config is None:
+        logger.error("Could not load config. Exiting...")
         return
-    
-    logger.info(f"Base query: {config.query}")
-    
-    # ------------------------------------------------------------------
-    # Query Transform
-    # ------------------------------------------------------------------
 
-    logger.info("Transforming query...")
-    transformed_queries = transform_query(config.query)
+    crawler_config = config["crawler"]
+    scraper_config = config["scraper"]
+
+    logger.info("Transforming Query...")
+    transformed_queries = transform_query(crawler_config.query)
     logger.info(f"Generated {len(transformed_queries)} query variations")
 
+    logger.info("Initialising Crawler...")
+    crawler = Crawler(crawler_config)
+    logger.info(f"Processing query: '{crawler_config.query}'")
+    results_count = crawler.search_and_store_batch(transformed_queries)
+    logger.info(f"Crawl completed! Total new links found: {results_count}")
 
-    # ------------------------------------------------------------------
-    # DuckDuckGo Search
-    # ------------------------------------------------------------------
-    
-    # Initialize scraper
-    logger.info("Initialising Search...")
-    scraper = Search_Engine(config)
-    
-    # Process each transformed query
-    logger.info(f"Processing query: '{config.query}'")
-    results_count = scraper.search_and_store_batch(transformed_queries)
-    
-    logger.info(f"Scraping completed! Total new links found: {results_count}")
+    logger.info("Scraping Links...")
+    links = load_links(scraper_config.links_file_path)
+    async with Scraper(scraper_config) as scraper:
+        results = await scraper.extract_all_content(links)
+        images = results["images"]
+        markdown = results["markdowns"]
+        # Optionally save results here
 
 if __name__ == "__main__":
-    main()
+    args = parse_args()
+    asyncio.run(main(args.config))

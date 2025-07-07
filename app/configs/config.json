@@ -1,9 +1,17 @@
 {
-  "query": "Singapore",
-  "language": "en",
-  "pages": 3,
-  "time_range": "year",
-  "timeout": 3,
-  "base_dir": "app/storage/raw_links",
-  "db_dir": "app/storage/raw_links/db_link_hashing"
+  "crawler" : {
+      "query": "Singapore",
+      "language": "en",
+      "pages": 3,
+      "time_range": "year",
+      "timeout": 3,
+      "links_file_path": "app/storage/raw_links/links.jsonl",
+      "shelf_path": "app/storage/raw_links/db_link_hashing/link_hash_db"
+  },
+  "scraper" : {
+    "concurrency": 4,
+    "links_file_path": "app/storage/raw_links/links.jsonl",
+    "images_outfile": "app/storage/images_metadata/images_metadata.json",
+    "markdown_outfile": "app/storage/images_metadata/text_markdown.json"
+  }
 }

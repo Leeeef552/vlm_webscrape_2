@@ -5,42 +5,47 @@ import time
 import requests
 from datetime import datetime
 import tldextract
-from ..configs.config import ScraperConfig
+# ScraperConfig class
+from ..configs.config import CrawlerConfig
 
-class Search_Engine:
-    def __init__(self, config: ScraperConfig):
-        self.config = config
+
+
+### TO DO: SET UP LOGGER 
+
+class Crawler:
+    def __init__(self, scraper_config: CrawlerConfig):
+        self.scraper_config = scraper_config
         self.searx_url = "http://localhost:8124/search"  # Fixed SearXNG URL
         
         # Ensure folders exist
-        os.makedirs(config.base_dir, exist_ok=True)
-        os.makedirs(config.db_dir, exist_ok=True)
 
         # Fixed delay between requests to avoid rate limiting
         self.delay = 1.0  # seconds
 
         # Paths for JSONL & Shelf
-        self.jsonl_path = os.path.join(config.base_dir, 'links.jsonl')
-        self.shelf_path = os.path.join(config.db_dir, 'link_hash_db')
+        self.jsonl_path = self.scraper_config.links_file_path
+        self.shelf_path = self.scraper_config.shelf_path
+
 
     def _make_searx_request(self, query: str, page: int = 1):
         """Make a single request to SearXNG API."""
         params = {
             "q": query,
             "format": "json",
-            "language": self.config.language,
+            "language": self.scraper_config.language,
             "categories": "general",  # Fixed parameter
             "pageno": page,
-            "time_range": self.config.time_range
+            "time_range": self.scraper_config.time_range
         }
         
         try:
-            resp = requests.get(self.searx_url, params=params, timeout=self.config.timeout)
+            resp = requests.get(self.searx_url, params=params, timeout=self.scraper_config.timeout)
             resp.raise_for_status()
             return resp.json().get("results", [])
         except requests.exceptions.RequestException as e:
             print(f"[ERROR] Request failed: {e}")
             return []
+
 
     def search_and_store(self, query: str):
         """Search and store links for a specific query, with gentle rate-limiting and progress save."""
@@ -50,8 +55,8 @@ class Search_Engine:
 
         with shelve.open(self.shelf_path) as shelf, open(self.jsonl_path, 'a', encoding='utf-8') as jsonl_file:
             # Iterate through pages
-            for page in range(1, self.config.pages + 1):
-                print(f"[INFO] Processing page {page}/{self.config.pages}")
+            for page in range(1, self.scraper_config.pages + 1):
+                print(f"[INFO] Processing page {page}/{self.scraper_config.pages}")
                 
                 results = self._make_searx_request(query, page)
                 if not results:
@@ -104,6 +109,7 @@ class Search_Engine:
         print(f"[INFO] Done. Added {count} new links. Skipped {skipped} duplicates.")
         return count
 
+
     def search_and_store_batch(self, queries: list[str]):
         """Search and store links for multiple queries."""
         print(f"[INFO] Starting batch search for {len(queries)} queries...")
@@ -120,8 +126,8 @@ class Search_Engine:
                 
                 try:
                     # Iterate through pages for this query
-                    for page in range(1, self.config.pages + 1):
-                        print(f"[INFO] Processing page {page}/{self.config.pages} for query '{query}'")
+                    for page in range(1, self.scraper_config.pages + 1):
+                        print(f"[INFO] Processing page {page}/{self.scraper_config.pages} for query '{query}'")
                         
                         results = self._make_searx_request(query, page)
                         if not results:
@@ -190,13 +196,3 @@ class Search_Engine:
             'total_skipped': total_skipped,
             'queries_processed': len(queries)
         }
-
-    def iter_records(self):
-        """Yield all stored SearXNG results from the JSONL file."""
-        try:
-            with open(self.jsonl_path, 'r', encoding='utf-8') as f:
-                for line in f:
-                    yield json.loads(line.strip())
-        except FileNotFoundError:
-            print(f"[WARNING] JSONL file not found: {self.jsonl_path}")
-            return
