@@ -6,19 +6,19 @@ A modular, LLM-augmented pipeline to discover, scrape, extract, and expand knowl
 
 ## 🚀 Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Architecture & Design](#architecture--design)
-- [Directory Structure](#directory-structure)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [Pipeline Details](#pipeline-details)
-- [Extending the Knowledge Base](#extending-the-knowledge-base)
-- [Exploration vs. Exploitation](#exploration-vs-exploitation)
-- [Roadmap & To Do](#roadmap--to-do)
-- [Contributing](#contributing)
-- [License](#license)
+* [Overview](#overview)
+* [Features](#features)
+* [Architecture & Design](#architecture--design)
+* [Directory Structure](#directory-structure)
+* [Installation](#installation)
+* [Configuration](#configuration)
+* [Usage](#usage)
+* [Pipeline Details](#pipeline-details)
+* [Extending the Knowledge Base](#extending-the-knowledge-base)
+* [Exploration vs. Exploitation](#exploration-vs-exploitation)
+* [Roadmap & To Do](#roadmap--to-do)
+* [Contributing](#contributing)
+* [License](#license)
 
 ---
 
@@ -38,36 +38,36 @@ By combining search, scraping, and LLMs, you can bootstrap a focused knowledge g
 
 ## ✨ Features
 
-- **Crawler** (`core/crawler.py`)
+* **Crawler** (`core/crawler.py`)
 
-  - Batch queries to SearXNG or other engines.
-  - Deduplicates using a persistent `shelve` index.
-  - Checkpointing to JSONL for safe writes.
+  * Batch queries to SearXNG or other engines.
+  * Deduplicates using a persistent `shelve` index.
+  * Checkpointing to JSONL for safe writes.
 
-- **Scraper** (`core/scraper.py`)
+* **Scraper** (`core/scraper.py`)
 
-  - Async fetching via Playwright (headless Chromium).
-  - Smart scrolling + “load more” clicks.
-  - Text extraction with headings, paragraphs, lists, and markdown output.
-  - Image metadata extraction & validation.
+  * Async fetching via Playwright (headless Chromium).
+  * Smart scrolling + “load more” clicks.
+  * Text extraction with headings, paragraphs, lists, and markdown output.
+  * Image metadata extraction & validation.
 
-- **Knowledge Extraction** (`core/topic_extraction.py`)
+* **Knowledge Extraction** (`core/topic_extraction.py`)
 
-  - (PLANNED) LLM-driven extraction of topics, entities, and concept graphs.
+  * (PLANNED) LLM-driven extraction of topics, entities, and concept graphs.
 
-- **Query Transformation** (`main.py`)
+* **Query Transformation** (`main.py`)
 
-  - Baseline query templates (e.g., adding “travel tips”, “landmarks”).
-  - (PLANNED) LLM-based query rewriting for exploration/exploitation.
+  * Baseline query templates (e.g., adding “travel tips”, “landmarks”).
+  * (PLANNED) LLM-based query rewriting for exploration/exploitation.
 
-- **Storage** (`storage/`)
+* **Storage** (`storage/`)
 
-  - JSONL/text files for scraped links and content.
-  - `shelve` for fast URL deduplication.
+  * JSONL/text files for scraped links and content.
+  * `shelve` for fast URL deduplication.
 
-- **Utilities** (`utils/`)
+* **Utilities** (`utils/`)
 
-  - Custom logger, link loader, and other helpers.
+  * Custom logger, link loader, and other helpers.
 
 ---
 
@@ -147,26 +147,32 @@ app/
    pip install -r requirements.txt
    ```
 
-4. **Run** SearXNG locally (or point at another engine) on port `8124`.
+4. **Update your `.gitignore`** to exclude your virtual environment folder (e.g., `.venv/`) and other temporary files.
 
----
+5. **Run** SearXNG locally (or point at another engine) on port `8124`.
 
 ## 🔧 Configuration
 
-All settings live in a JSON file (default: `app/configs/config.json`):
+This pipeline relies on a **self‑hosted SearxNG** instance as its meta‑search engine. Follow the official installation guide:
+
+* **SearxNG Admin Installation (Docker)**: [https://docs.searxng.org/admin/installation-docker.html](https://docs.searxng.org/admin/installation-docker.html)
+* **Docker Image**: [https://hub.docker.com/r/searxng/searxng](https://hub.docker.com/r/searxng/searxng)
+
+Once deployed (default port `8124`), update your `config.json` so that the `crawler.searxng_url` matches your SearxNG endpoint. Example config:
 
 ```json
 {
-  "crawler" : {
-      "query": "Singapore",
-      "language": "en",
-      "pages": 3,
-      "time_range": "year",
-      "timeout": 3,
-      "links_file_path": "app/storage/raw_links/links.jsonl",
-      "shelf_path": "app/storage/raw_links/db_link_hashing/link_hash_db"
+  "crawler": {
+    "searxng_url": "http://localhost:8124/search",
+    "query": "Singapore",
+    "language": "en",
+    "pages": 1,
+    "time_range": "year",
+    "timeout": 3,
+    "links_file_path": "app/storage/raw_links/links.jsonl",
+    "shelf_path": "app/storage/raw_links/db_link_hashing/link_hash_db"
   },
-  "scraper" : {
+  "scraper": {
     "concurrency": 4,
     "links_file_path": "app/storage/raw_links/links.jsonl",
     "images_outfile": "app/storage/images_metadata/images_metadata.json",
@@ -175,13 +181,7 @@ All settings live in a JSON file (default: `app/configs/config.json`):
 }
 ```
 
-- **crawler.query** — your root topic or keyword.
-- **pages** — max pages per query.
-- **time\_range** — filter results by date.
-- **shelf\_path** — deduplication index.
-- **scraper.concurrency** — parallel browser sessions.
-
----
+> **⚠️ Before running**: ensure your SearxNG container is up and the `searxng_url` is reachable (e.g., `curl http://localhost:8124/search?q=test`).
 
 ## 🚀 Usage
 
@@ -211,22 +211,22 @@ async with Scraper(config.scraper) as s:
 
 ## 🧠 Extending the Knowledge Base
 
-- **Topic Extraction**: Use `core/topic_extraction.py` to feed scraped markdown into an LLM (OpenAI, Claude, etc.)
+* **Topic Extraction**: Use `core/topic_extraction.py` to feed scraped markdown into an LLM (OpenAI, Claude, etc.)
 
-  - Extract **entities**, **topics**, **concepts**, **relations**.
-  - Store in your vector DB or graph database.
+  * Extract **entities**, **topics**, **concepts**, **relations**.
+  * Store in your vector DB or graph database.
 
-- **Query Rewriting**: Replace the placeholder `transform_query()` in `main.py` with an LLM prompt that:
+* **Query Rewriting**: Replace the placeholder `transform_query()` in `main.py` with an LLM prompt that:
 
   1. **Exploits** high‑confidence areas (common topics).
   2. **Explores** sparse or niche subtopics.
   3. Ranks & returns top‑K new queries.
 
-- **Exploitation vs. Exploration**:
+* **Exploitation vs. Exploration**:
 
-  - Exploitation: repeat queries around frequent entities to deepen coverage.
-  - Exploration: generate novel queries for long‑tail or emerging terms.
-  - Use heuristic scoring (e.g., TF-IDF on your KB) or ask the LLM to rate.
+  * Exploitation: repeat queries around frequent entities to deepen coverage.
+  * Exploration: generate novel queries for long‑tail or emerging terms.
+  * Use heuristic scoring (e.g., TF-IDF on your KB) or ask the LLM to rate.
 
 ---
 
@@ -246,9 +246,19 @@ async with Scraper(config.scraper) as s:
 
 ## 🛣️ Roadmap & To Do
 
--
+* [x] Basic crawler implementation (`core/crawler.py`)
+* [x] Basic scraper implementation (`core/scraper.py`)
+* [x] Baseline query templates in `main.py`
+* [ ] LLM-driven query rewriting (in `process.py`)
+* [ ] Exploration/exploitation scoring and logic for query expansion
+* [ ] Topic/entity extraction module (`core/topic_extraction.py`)
+* [ ] PDF content support in `scraper.py`
+* [ ] Checkpointing & resume support for long-running crawls
+* [ ] Integration with a vector database or graph store for the knowledge base
+* [ ] Recursive query-driven pipeline loop
+* [ ] Detailed documentation and usage examples for each component
 
-## 🤝 Contributing
+<!-- ## 🤝 Contributing
 
 1. Fork & clone.
 2. Create a feature branch (`git checkout -b feature/xyz`).
@@ -261,5 +271,4 @@ Please follow our [Code of Conduct](./CODE_OF_CONDUCT.md).
 
 ## 📜 License
 
-This project is licensed under the [MIT License](./LICENSE).
-
+This project is licensed under the [MIT License](./LICENSE). -->

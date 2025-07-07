@@ -1,5 +1,6 @@
 {
   "crawler" : {
+      "searxng_url": "http://localhost:8124/search",  
       "query": "Singapore",
       "language": "en",
       "pages": 1,

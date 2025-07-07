@@ -16,7 +16,7 @@ class Crawler:
 
     def __init__(self, scraper_config: CrawlerConfig):
         self.scraper_config = scraper_config
-        self.searx_url = "http://localhost:8124/search"  # Fixed SearXNG URL
+        self.searx_url = self.scraper_config.searxng_url
 
         # Fixed delay between requests to avoid rate limiting
         self.delay = 1.0  # seconds
