@@ -2,7 +2,7 @@
   "crawler" : {
       "query": "Singapore",
       "language": "en",
-      "pages": 3,
+      "pages": 1,
       "time_range": "year",
       "timeout": 3,
       "links_file_path": "app/storage/raw_links/links.jsonl",

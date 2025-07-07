@@ -19,6 +19,9 @@ __pycache__/
 
 # Database files
 *.db
+*.bak
+*.dat
+*.dir
 
 # JSON-based data
 *.json
