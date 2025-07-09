@@ -1,4 +1,8 @@
 # To Do:
+- image filtering
+- image deduplication
+- kb builder
+
 
 ## overall:
 1. query rewrite with LLM
@@ -8,11 +12,13 @@
 
 2. features in `scraper.py`
     - checkpointing and dynamic write
-    - handling of pdf 
-
     - after links are processed push to a done location OR set logic to skip those since already scraped
-    - 
 
 
 3. features in `scraper.py`
-    
+
+
+## KB and LLM knowledge extraction:
+- singapore context domain
+- named entities
+- entities, objects, scenes/events/concepts

@@ -23,6 +23,13 @@ class ScraperConfig:
     images_outfile: str = "app/storage/images_metadata/images_metadata.json"
     markdown_outfile: str = "app/storage/images_metadata/text_markdown.json"
 
+@dataclass
+class KnowledgeBaseBuilderConfig:
+   llm: str = "Qwen/Qwen3-14B"
+   knowledge_base_dir_path: str = "app/storage/knowledge_base"
+   
+
+
 
 def load_config(file_path):
     config_classes = {}
