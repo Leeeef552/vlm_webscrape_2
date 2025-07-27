@@ -15,6 +15,8 @@ from datetime import datetime, timezone
 import os
 from ..configs.config import ScraperConfig
 from ..utils.logger import logger
+from openai import OpenAI, BadRequestError
+from tqdm import tqdm
 
 class TextExtractor:
     """Handles text extraction from HTML elements."""
@@ -239,6 +241,7 @@ class Scraper:
         self.browser: Optional[Browser] = None
         self.scraper_config = ScraperConfig
         self.semaphore = asyncio.Semaphore(self.scraper_config.concurrency)
+        self.batch_size_llm = self.scraper_config.batch_size_llm
 
     async def __aenter__(self) -> Scraper:
         self._pw = await async_playwright().start()
@@ -304,7 +307,7 @@ class Scraper:
             'a:has-text("show more")',
         ]
         clicks = 0
-        max_clicks = 5
+        max_clicks = 2
         for _ in range(max_clicks):
             found = False
             for sel in selectors:
@@ -318,7 +321,6 @@ class Scraper:
                         clicks += 1
                         found = True
                         await page.wait_for_timeout(1000)
-                        logger.info("Clicked 'load more' button %s/%s", clicks, max_clicks)
                         break
                     except Exception:
                         continue
@@ -340,7 +342,7 @@ class Scraper:
             )
             page = await context.new_page()
             try:
-                await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                await page.goto(url, wait_until="domcontentloaded", timeout=15000)
                 await self._click_load_more(page)
                 last_h = -1
                 for _ in range(20):
@@ -414,7 +416,6 @@ class Scraper:
             "title_attribute": img_tag.get("title", "").strip(),
             "raw_caption": self.text_extractor.get_surrounding_text(img_tag),
             "page_summary": page_summary,
-            "content_context": None,
             "extracted_at": datetime.now(timezone.utc).isoformat() + "Z",
         }
 
@@ -428,7 +429,7 @@ class Scraper:
         
         # Use markdown content as the main text_content (better for LLM ingestion)
         text_content = content_data["markdown_content"]
-        
+             
         return {
             "page_url": url,
             "page_title": page_title,
@@ -441,7 +442,6 @@ class Scraper:
 
     async def _extract_both_from_url(self, url: str) -> Dict[str, Any]:
         """Extract both images and markdown from a URL in one operation"""
-        logger.info(f"Extracting content from: {url}")
         soup = await self._fetch_page_content(url)
         if not soup:
             return {"images": [], "markdown": {}}
@@ -474,10 +474,21 @@ class Scraper:
     # New batch method
     async def extract_all_content(self, urls: List[str]) -> Dict[str, List[Any]]:
         """Extract both images and markdown for all URLs concurrently"""
-        logger.info(f"Extracting content from {len(urls)} URLs")
+        # logger.info(f"Extracting content from {len(urls)} URLs")
         
-        tasks = [self._extract_both_from_url(u) for u in urls]
+        # Create shared progress bar
+        pbar = tqdm(total=len(urls), desc="Scraping URLs", unit="url")
+        
+        async def extract_with_progress(url: str) -> Dict[str, Any]:
+            try:
+                result = await self._extract_both_from_url(url)
+                return result
+            finally:
+                pbar.update(1)
+        
+        tasks = [extract_with_progress(u) for u in urls]
         results = await asyncio.gather(*tasks, return_exceptions=True)
+        pbar.close()
         
         # Separate results
         all_images = []
@@ -489,69 +500,80 @@ class Scraper:
             all_images.extend(res["images"])
             all_markdowns.append(res["markdown"])
         
-        # Handle file writing with error catching
-        try:
-            with open(self.scraper_config.images_outfile, "w", encoding="utf-8") as f:
-                json.dump(all_images, f, ensure_ascii=False, indent=2)
-            logger.info(f"Extracted {len(all_images)} images")
-        except FileNotFoundError:
-            logger.error(f"FileNotFoundError: Check images_outfile path '{self.scraper_config.images_outfile}' in your config.")
-        except OSError as e:
-            logger.error(f"OSError writing images_outfile '{self.scraper_config.images_outfile}': {e}")
-        except TypeError as e:
-            logger.error(f"JSON encoding error while writing images_outfile: {e}")
-
-        try:
-            with open(self.scraper_config.markdown_outfile, "w", encoding="utf-8") as f:
-                json.dump(all_markdowns, f, ensure_ascii=False, indent=2)
-            logger.info(f"Processed {len(all_markdowns)} webpages")
-        except FileNotFoundError:
-            logger.error(f"FileNotFoundError: Check markdown_outfile path '{self.scraper_config.markdown_outfile}' in your config.")
-        except OSError as e:
-            logger.error(f"OSError writing markdown_outfile '{self.scraper_config.markdown_outfile}': {e}")
-        except TypeError as e:
-            logger.error(f"JSON encoding error while writing markdown_outfile: {e}")
-        
         return {"images": all_images, "markdowns": all_markdowns}
+    
+
+    def batch_process_markdowns(self, markdowns: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Batch-process markdowns concurrently against a VLLM chat completion endpoint."""
+        import concurrent.futures
+        import tiktoken # Import tiktoken to estimate token count
         
+        # Define the system prompt
+        SYSTEM_PROMPT = (
+            "You are an assistant that extracts and returns only the parts of the given markdown "
+            "that are relevant to the topic of Singapore, whether mentioned directly or indirectly. "
+            "Return the extracted content in markdown format with no additional commentary. "
+            "If there is no information related to Singapore, output <No Singapore content>."
+        )
+        SYSTEM_PROMPT_TOKENS = len(tiktoken.encoding_for_model("gpt2").encode(SYSTEM_PROMPT))
 
-# async def main(): 
-#     import time
-#     start_time = time.time()
-#     print("Starting the process...")
-    
-#     URLS = [
-#         "https://strictlysingapore.com/tourist-tips/",
-#         "https://www.visitsingapore.com/",
-#         "https://migrationology.com/singapore-food/",
-#         "https://builtinsingapore.com/articles/top-companies-in-singapore",
-#         "https://bbcincorp.com/sg/articles/singapore-government-agencies",
-#         "https://www.sutrahr.com/recruitment-agencies-in-singapore/"
-#     ]
+        # Initialize OpenAI client
+        client = OpenAI(
+            base_url=self.scraper_config.llm_scraper_url,
+            api_key="dummy"
+        )
 
-#     async with Scraper(concurrency=3) as extractor:
-#         # Single extraction pass for all URLs
-#         results = await extractor.extract_all_content(URLS)
-#         images = results["images"]
-#         markdown = results["markdowns"]
+        def _sync_call(md_item: Dict[str, Any]) -> str:
+            original_url = md_item.get("page_url", "Unknown URL")
+            text_content = md_item.get("text_content", "")
+            
+            try:
+                encoding = tiktoken.encoding_for_model("gpt2")
+                estimated_tokens = SYSTEM_PROMPT_TOKENS + len(encoding.encode(text_content))
 
-#     images_file_dir = "../storage/images_metadata"
-#     images_outfile = f"{images_file_dir}/images_metadata_async.json"
-#     os.makedirs(images_file_dir, exist_ok=True)
-#     with open(images_outfile, "w", encoding="utf-8") as f:
-#         json.dump(images, f, ensure_ascii=False, indent=2)
-    
-    
-#     markdown_file_dir = "../storage/text_markdown"
-#     markdown_outfile = f"{markdown_file_dir}/text_markdown_async.json"
-#     os.makedirs(markdown_file_dir, exist_ok=True)
-#     with open(markdown_outfile, "w", encoding="utf-8") as fp:
-#         json.dump(markdown, fp, ensure_ascii=False, indent=2)
+                max_allowed_tokens_for_user = 60000 - SYSTEM_PROMPT_TOKENS - 1000
+                
+                if estimated_tokens > 60000:
+                    logger.warning(f"Estimated tokens ({estimated_tokens}) for URL '{original_url}' exceeds limit. Truncating.")
+                    truncated_tokens = encoding.encode(text_content)[:max_allowed_tokens_for_user]
+                    text_content = encoding.decode(truncated_tokens)
+                    logger.info(f"Truncated text_content for URL '{original_url}' to fit context window.")
+            except Exception as e:
+                logger.warning(f"Could not estimate/truncate tokens for URL '{original_url}': {e}. Proceeding with original text.")
+            
+            try:
+                response = client.chat.completions.create(
+                    model=self.scraper_config.model_name,
+                    messages=[
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user",   "content": text_content}
+                    ],
+                )
+                return response.choices[0].message.content
+            except BadRequestError as e:
+                error_msg = f"LLM Processing Error for URL '{original_url}': {e.message}"
+                logger.error(error_msg)
+                return f"<LLM_PROCESSING_ERROR: {e.message}>"
+            except Exception as e:
+                error_msg = f"Unexpected Error processing URL '{original_url}': {e}"
+                logger.error(error_msg)
+                return f"<UNEXPECTED_ERROR: {str(e)}>"
 
-#     end_time = time.time()
-#     print(f"extracted {len(images)} images")
-#     print(f"extracted {len(markdown)} pages")
-#     print(f"Process completed in {end_time - start_time:.2f} seconds.")
+        max_workers = self.batch_size_llm
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            results = list(
+                tqdm(
+                    executor.map(_sync_call, markdowns),
+                    total=len(markdowns),
+                    desc="Processing markdowns with LLM",
+                    unit="md"
+                )
+            )
+        
+        if len(markdowns) == len(results):
+            for md, new_text in zip(markdowns, results):
+                md["text_content"] = new_text
+        else:
+            logger.error(f"Mismatch in markdowns ({len(markdowns)}) and results ({len(results)}) count after LLM processing.")
 
-# if __name__ == "__main__":
-#     asyncio.run(main())
+        return markdowns

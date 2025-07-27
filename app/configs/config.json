@@ -1,18 +1,34 @@
 {
-  "crawler" : {
-      "searxng_url": "http://localhost:8124/search",  
-      "query": "Singapore",
-      "language": "en",
-      "pages": 1,
-      "time_range": "year",
-      "timeout": 3,
-      "links_file_path": "app/storage/raw_links/links.jsonl",
-      "shelf_path": "app/storage/raw_links/db_link_hashing/link_hash_db"
+  "crawler": {
+    "searxng_url": "http://localhost:3628/search",
+    "language": "en",
+    "pages": 1,
+    "time_range": "year",
+    "timeout": 3,
+    "links_file_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/links.jsonl"
   },
-  "scraper" : {
+  "scraper": {
     "concurrency": 4,
-    "links_file_path": "app/storage/raw_links/links.jsonl",
-    "images_outfile": "app/storage/images_metadata/images_metadata.json",
-    "markdown_outfile": "app/storage/images_metadata/text_markdown.json"
+    "links_file_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/links.jsonl",
+    "images_dir": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/images_metadata",
+    "markdown_dir": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data",
+    "llm_scraper_url": "http://localhost:8124/v1",
+    "model_name": "google/gemma-3-12b-it",
+    "batch_size_llm": 8
+  },
+  "topic_extractor": {
+    "data_file": "dummy",
+    "gliner_model_name": "gliner-community/gliner_large-v2.5",
+    "gliner_threshold": 0.75,
+    "gliner_labels_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_entity_labels.jsonl",
+    "concurrency": 4,
+    "output_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities/extracted_entities.json"
+  },
+  "query_expansion": {
+    "data_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities/extracted_entities.json",
+    "model_name": "google/gemma-3-12b-it",
+    "base_url": "http://localhost:8124/v1",
+    "expansion_depth": 4,
+    "expansion_width": 4
   }
 }

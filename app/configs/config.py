@@ -7,29 +7,39 @@ from ..utils.logger import logger
 
 @dataclass
 class CrawlerConfig:
-    query: str = ""
     language: str = "en"
     pages: int = 1
     time_range: str = "year"
     timeout: int = 4
     links_file_path: str = "app/storage/raw_links"
-    shelf_path: str = "app/storage/raw_links/db_link_hashing"
-
+    searxng_url: str = "http://localhost:3628/"
 
 @dataclass
 class ScraperConfig:
     concurrency: int = 4
     links_file_path: str = "app/storage/raw_links/links.jsonl"
-    images_outfile: str = "app/storage/images_metadata/images_metadata.json"
-    markdown_outfile: str = "app/storage/images_metadata/text_markdown.json"
+    images_dir: str = "app/storage/images_metadata/"
+    markdown_dir: str = "app/storage/text_data/"
+    llm_scraper_url: str = "http://localhost:8124/v1"
+    model_name: str = "google/gemma-3-12b-it"
+    batch_size_llm: int = 8
 
 @dataclass
-class KnowledgeBaseBuilderConfig:
-   llm: str = "Qwen/Qwen3-14B"
-   knowledge_base_dir_path: str = "app/storage/knowledge_base"
-   
+class TopicExtractorConfig:
+    data_file: str = "app/storage/text_data/text_markdown.json"
+    gliner_model_name: str = "urchade/gliner_large-v2.1"
+    gliner_threshold: int = 0.75
+    gliner_labels_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_entity_labels.jsonl"
+    concurrency: int = 4
+    output_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities/extracted_entities.json"
 
-
+@dataclass
+class QueryExpansionConfig:
+    data_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities/extracted_entities.json"
+    base_url: str = "http://localhost:8124/v1"
+    model_name: str = "google/gemma-3-12b-it"
+    expansion_depth: int = 4
+    expansion_width: int = 4
 
 def load_config(file_path):
     config_classes = {}
@@ -38,6 +48,9 @@ def load_config(file_path):
             config_class_params = json.load(f)
         config_classes["crawler"] = CrawlerConfig(**config_class_params["crawler"])
         config_classes["scraper"]  = ScraperConfig(**config_class_params["scraper"])
+        config_classes["topic_extractor"] = TopicExtractorConfig(**config_class_params["topic_extractor"])
+        config_classes["query_expansion"] = QueryExpansionConfig(**config_class_params["query_expansion"])
+        
         return config_classes
 
     except FileNotFoundError as e:
