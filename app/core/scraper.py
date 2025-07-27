@@ -241,7 +241,6 @@ class Scraper:
         self.browser: Optional[Browser] = None
         self.scraper_config = ScraperConfig
         self.semaphore = asyncio.Semaphore(self.scraper_config.concurrency)
-        self.batch_size_llm = self.scraper_config.batch_size_llm
 
     async def __aenter__(self) -> Scraper:
         self._pw = await async_playwright().start()
@@ -501,79 +500,3 @@ class Scraper:
             all_markdowns.append(res["markdown"])
         
         return {"images": all_images, "markdowns": all_markdowns}
-    
-
-    def batch_process_markdowns(self, markdowns: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Batch-process markdowns concurrently against a VLLM chat completion endpoint."""
-        import concurrent.futures
-        import tiktoken # Import tiktoken to estimate token count
-        
-        # Define the system prompt
-        SYSTEM_PROMPT = (
-            "You are an assistant that extracts and returns only the parts of the given markdown "
-            "that are relevant to the topic of Singapore, whether mentioned directly or indirectly. "
-            "Return the extracted content in markdown format with no additional commentary. "
-            "If there is no information related to Singapore, output <No Singapore content>."
-        )
-        SYSTEM_PROMPT_TOKENS = len(tiktoken.encoding_for_model("gpt2").encode(SYSTEM_PROMPT))
-
-        # Initialize OpenAI client
-        client = OpenAI(
-            base_url=self.scraper_config.llm_scraper_url,
-            api_key="dummy"
-        )
-
-        def _sync_call(md_item: Dict[str, Any]) -> str:
-            original_url = md_item.get("page_url", "Unknown URL")
-            text_content = md_item.get("text_content", "")
-            
-            try:
-                encoding = tiktoken.encoding_for_model("gpt2")
-                estimated_tokens = SYSTEM_PROMPT_TOKENS + len(encoding.encode(text_content))
-
-                max_allowed_tokens_for_user = 60000 - SYSTEM_PROMPT_TOKENS - 1000
-                
-                if estimated_tokens > 60000:
-                    logger.warning(f"Estimated tokens ({estimated_tokens}) for URL '{original_url}' exceeds limit. Truncating.")
-                    truncated_tokens = encoding.encode(text_content)[:max_allowed_tokens_for_user]
-                    text_content = encoding.decode(truncated_tokens)
-                    logger.info(f"Truncated text_content for URL '{original_url}' to fit context window.")
-            except Exception as e:
-                logger.warning(f"Could not estimate/truncate tokens for URL '{original_url}': {e}. Proceeding with original text.")
-            
-            try:
-                response = client.chat.completions.create(
-                    model=self.scraper_config.model_name,
-                    messages=[
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user",   "content": text_content}
-                    ],
-                )
-                return response.choices[0].message.content
-            except BadRequestError as e:
-                error_msg = f"LLM Processing Error for URL '{original_url}': {e.message}"
-                logger.error(error_msg)
-                return f"<LLM_PROCESSING_ERROR: {e.message}>"
-            except Exception as e:
-                error_msg = f"Unexpected Error processing URL '{original_url}': {e}"
-                logger.error(error_msg)
-                return f"<UNEXPECTED_ERROR: {str(e)}>"
-
-        max_workers = self.batch_size_llm
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-            results = list(
-                tqdm(
-                    executor.map(_sync_call, markdowns),
-                    total=len(markdowns),
-                    desc="Processing markdowns with LLM",
-                    unit="md"
-                )
-            )
-        
-        if len(markdowns) == len(results):
-            for md, new_text in zip(markdowns, results):
-                md["text_content"] = new_text
-        else:
-            logger.error(f"Mismatch in markdowns ({len(markdowns)}) and results ({len(results)}) count after LLM processing.")
-
-        return markdowns

@@ -47,13 +47,17 @@ async def main():
         if i == 0:
             q = current_queries[0]
             logger.info(f"Crawling initial query '{q}'...")
-            crawler.search_and_store(q)
+            run_links_file = crawler.search_and_store(q)
         else:
             logger.info(f"Crawling batch queries: {current_queries}...")
-            crawler.search_and_store_batch(current_queries)
+            run_links_file = crawler.search_and_store_batch(current_queries)
 
         # 2) Load discovered links
         logger.info("Loading links for scraping...")
+
+        scraper_cfg.links_file_path = run_links_file
+        
+
         links = load_links(scraper_cfg.links_file_path)
 
         # 3) Scrape content
@@ -62,8 +66,7 @@ async def main():
             out = await scraper.extract_all_content(links)
             images = out["images"]
             markdowns = out["markdowns"]
-        markdowns = scraper.batch_process_markdowns(markdowns)
-
+            
         # 4) Save scraped outputs
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         img_file = Path(scraper_cfg.images_dir) / f"images_metadata_{ts}.json"

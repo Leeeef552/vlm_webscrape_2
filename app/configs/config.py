@@ -11,22 +11,22 @@ class CrawlerConfig:
     pages: int = 1
     time_range: str = "year"
     timeout: int = 4
-    links_file_path: str = "app/storage/raw_links"
+    links_file_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/links.jsonl"
     searxng_url: str = "http://localhost:3628/"
 
 @dataclass
 class ScraperConfig:
     concurrency: int = 4
-    links_file_path: str = "app/storage/raw_links/links.jsonl"
-    images_dir: str = "app/storage/images_metadata/"
-    markdown_dir: str = "app/storage/text_data/"
-    llm_scraper_url: str = "http://localhost:8124/v1"
-    model_name: str = "google/gemma-3-12b-it"
-    batch_size_llm: int = 8
+    links_file_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/links.jsonl"
+    images_dir: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/images_metadata"
+    markdown_dir: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data"
+    # llm_scraper_url: str = "http://localhost:8124/v1"
+    # model_name: str = "google/gemma-3-12b-it"
+    # batch_size_llm: int = 8
 
 @dataclass
 class TopicExtractorConfig:
-    data_file: str = "app/storage/text_data/text_markdown.json"
+    data_file: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data"
     gliner_model_name: str = "urchade/gliner_large-v2.1"
     gliner_threshold: int = 0.75
     gliner_labels_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_entity_labels.jsonl"

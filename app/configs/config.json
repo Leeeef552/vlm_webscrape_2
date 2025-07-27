@@ -11,13 +11,10 @@
     "concurrency": 4,
     "links_file_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/links.jsonl",
     "images_dir": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/images_metadata",
-    "markdown_dir": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data",
-    "llm_scraper_url": "http://localhost:8124/v1",
-    "model_name": "google/gemma-3-12b-it",
-    "batch_size_llm": 8
+    "markdown_dir": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data"
   },
   "topic_extractor": {
-    "data_file": "dummy",
+    "data_file": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data",
     "gliner_model_name": "gliner-community/gliner_large-v2.5",
     "gliner_threshold": 0.75,
     "gliner_labels_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_entity_labels.jsonl",
