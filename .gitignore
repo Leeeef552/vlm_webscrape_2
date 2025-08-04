@@ -17,12 +17,6 @@ __pycache__/
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
-# Database files
-*.db
-*.bak
-*.dat
-*.dir
-
-# JSON-based data
-*.json
-*.jsonl
+# Ignore JSON and JSONL files only in the storage directory
+/storage/*.json
+/storage/*.jsonl

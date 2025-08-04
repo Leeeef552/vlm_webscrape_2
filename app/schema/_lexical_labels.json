@@ -1,0 +1,3214 @@
+{
+  "MINDEF": [
+    "Ministry of Defence"
+  ],
+  "MOF": [
+    "Ministry of Finance"
+  ],
+  "MHA": [
+    "Ministry of Home Affairs"
+  ],
+  "MOE": [
+    "Ministry of Education"
+  ],
+  "MFA": [
+    "Ministry of Foreign Affairs"
+  ],
+  "MOH": [
+    "Ministry of Health"
+  ],
+  "MCCY": [
+    "Ministry of Culture, Community and Youth"
+  ],
+  "MDDI": [
+    "Ministry of Digital Development and Information"
+  ],
+  "MinLaw": [
+    "Ministry of Law"
+  ],
+  "MND": [
+    "Ministry of National Development"
+  ],
+  "MOT": [
+    "Ministry of Transport"
+  ],
+  "PMO": [
+    "Prime Minister's Office"
+  ],
+  "MSF": [
+    "Ministry of Social and Family Development"
+  ],
+  "MTI": [
+    "Ministry of Trade and Industry"
+  ],
+  "MOM": [
+    "Ministry of Manpower"
+  ],
+  "MSE": [
+    "Ministry of Sustainability and the Environment"
+  ],
+  "SNG": [
+    "Smart Nation Group (division under MDDI)"
+  ],
+  "NLB": [
+    "National Library Board"
+  ],
+  "NHB": [
+    "National Heritage Board"
+  ],
+  "IMDA": [
+    "Infocomm Media Development Authority (statutory board under MDDI)"
+  ],
+  "CCD": [
+    "Community and Culture Division (division under MCCY)"
+  ],
+  "YD": [
+    "Youth Division (division under MCCY)"
+  ],
+  "CFS": [
+    "Community Foundation of Singapore"
+  ],
+  "PA": [
+    "People's Association (statutory board under MCCY)"
+  ],
+  "CSA": [
+    "Cyber Security Agency (division under MDDI)",
+    "Community Sentencing Act (MHA legislative framework)"
+  ],
+  "DPG": [
+    "Defence Policy Group"
+  ],
+  "ADS": [
+    "Anti-Doping Singapore (statutory board under MCCY)"
+  ],
+  "MSD": [
+    "Military Security Department (division under MINDEF)"
+  ],
+  "HEG": [
+    "Higher Education Group"
+  ],
+  "ETD": [
+    "Educational Technology Division (division under MOE)"
+  ],
+  "HRG": [
+    "Health Regulation Group (division under MOH)"
+  ],
+  "CPDD": [
+    "Curriculum Planning and Development Division (division under MOE)"
+  ],
+  "FPD": [
+    "Finance and Procurement Division (division under MOE)"
+  ],
+  "IFSD": [
+    "Infrastructure and Facility Services Division (division under MOE)"
+  ],
+  "DSO": [
+    "DSO National Laboratories (statutory board under MINDEF)",
+    "Defence Science Organization"
+  ],
+  "PLD": [
+    "Planning Division (division under MOE)"
+  ],
+  "RMID": [
+    "Research and Management Information Division"
+  ],
+  "SD": [
+    "Schools Division"
+  ],
+  "SEND": [
+    "Special Educational Needs Division (division under MOE)"
+  ],
+  "SPSD": [
+    "Student Placement and Services Division"
+  ],
+  "SDCD": [
+    "Student Development Curriculum Division (division under MOE)"
+  ],
+  "ELIS": [
+    "English Language Institute of Singapore"
+  ],
+  "AST": [
+    "Academy of Singapore Teachers (division under MOE)"
+  ],
+  "IAB": [
+    "Internal Audit Branch (division under Ministry of Education)"
+  ],
+  "CPO": [
+    "Curriculum Policy Office (division under the Ministry of Education)"
+  ],
+  "SSG": [
+    "SkillsFuture Singapore"
+  ],
+  "PESTA": [
+    "Physical Education and Sports Teacher Academy"
+  ],
+  "ISEAS": [
+    "ISEAS-Yusof Ishhak Institute"
+  ],
+  "SEAB": [
+    "Singapore Examinations and Assessment Board"
+  ],
+  "21CCO": [
+    "21st Century Competencies Office (division under MOE)"
+  ],
+  "ITE": [
+    "Institute of Technical Education"
+  ],
+  "NP": [
+    "Ngee Ann Polytechnic"
+  ],
+  "STAR": [
+    "Singapore Teachers Academy for the Arts (division under MOE)",
+    "Special Tactics and Rescue (SPF tactical unit)"
+  ],
+  "NYP": [
+    "Nanyang Polytechnic"
+  ],
+  "SP": [
+    "Services Pillar (division under MOH)",
+    "Singapore Polytechnic"
+  ],
+  "RP": [
+    "Republic Polytechnic"
+  ],
+  "VITAL": [
+    "Vital (Shared Services) (division under MOF)"
+  ],
+  "AGD": [
+    "Accountant-General’s Department (division under MOF)"
+  ],
+  "TP": [
+    "Temasek Polytechnic (statutory board under MOE)",
+    "Traffic Police (under SPF)",
+    "Tampines"
+  ],
+  "HRD": [
+    "Human Resource Directorate (division under MINDEF)"
+  ],
+  "Tote Board": [
+    "Singapore Totalisator Board (statutory board under MOF)"
+  ],
+  "ACRA": [
+    "Accounting and Corporate Regulatory Authority",
+    "Accounting and Corporate Regulatory Authority (statutory board under MOF; company registry)"
+  ],
+  "CAD": [
+    "Corporate Affairs Directorate (division under MFA)",
+    "Commercial Affairs Department (under SPF)",
+    "Commercial Affairs Department"
+  ],
+  "SCS": [
+    "Science Centre Singapore (statutory board under MOE)",
+    "Specialist Cadet School",
+    "Singapore Computer Systems",
+    "Singapore Computer Society"
+  ],
+  "CEG": [
+    "Communication & Engagement Group"
+  ],
+  "PP": [
+    "Policy Pillar (division under MOH)",
+    "Public Prosecutor"
+  ],
+  "IRAS": [
+    "Inland Revenue Authority of Singapore (statutory board under MOF)",
+    "Inhalant Abuse and Recovery Scheme (CNB related)"
+  ],
+  "ICD": [
+    "International Cooperation Division (division under Ministry of Health)"
+  ],
+  "HPB": [
+    "Health Promotion Board"
+  ],
+  "SDC": [
+    "Sentosa Development Corporation"
+  ],
+  "HSA": [
+    "Health Sciences Authority"
+  ],
+  "DP": [
+    "Development Pillar (division under MOH)",
+    "Dependent's Pass (ICA document)"
+  ],
+  "ACE": [
+    "Agency for Care Effectiveness"
+  ],
+  "MTO": [
+    "Means-Test Office (division under MOH)"
+  ],
+  "SNB": [
+    "Singapore Nursing Board"
+  ],
+  "TCMPB": [
+    "Traditional Chinese Medicine Practitioners Board"
+  ],
+  "SMC": [
+    "Singapore Medical Council",
+    "Single Member Constituency"
+  ],
+  "DSAB": [
+    "Dental Specialists Accreditation Board"
+  ],
+  "OOB": [
+    "Optometrists and Opticians Board"
+  ],
+  "AHPC": [
+    "Allied Health Professions Council"
+  ],
+  "FPAB": [
+    "Family Physicians Accreditation Board (statutory board under MOH)"
+  ],
+  "PSAB": [
+    "Pharmacy Specialists Accreditation Board (statutory board under Ministry of Health)"
+  ],
+  "SPC": [
+    "Singapore Pharmacy Council (statutory board under MOH)",
+    "Special Marriage Certificate",
+    "SingPost Centre"
+  ],
+  "PS": [
+    "Policy and Strategy",
+    "Plaza Singapura"
+  ],
+  "FCS": [
+    "Finance and Corporate Services (division under MHA)"
+  ],
+  "CDA": [
+    "Communicable Diseases Agency (statutory board under MOH)",
+    "Central Provident Fund"
+  ],
+  "SCDF": [
+    "Singapore Civil Defence Force (under MHA)"
+  ],
+  "HTD": [
+    "Home Team Academy (statutory board under MHA)"
+  ],
+  "SPF": [
+    "Singapore Police Force"
+  ],
+  "SAB": [
+    "Specialists Accreditation Board (statutory board under MOH)",
+    "Superintendent's Advisory Board (SPS related)"
+  ],
+  "YRSG": [
+    "Yellow Ribbon Singapore"
+  ],
+  "LPD": [
+    "Legal Policy Division (division under MinLaw)"
+  ],
+  "ILD": [
+    "International Legal Division"
+  ],
+  "IPOS": [
+    "Intellectual Property Office of Singapore"
+  ],
+  "SLA": [
+    "Singapore Land Authority"
+  ],
+  "CPFB": [
+    "Central Provident Fund Board"
+  ],
+  "FMMD": [
+    "Foreign Manpower Management Division"
+  ],
+  "OSHD": [
+    "Occupational Safety and Health Division"
+  ],
+  "SLF": [
+    "Singapore Labour Foundation"
+  ],
+  "WPD": [
+    "Workplace Policy and Strategy Division (division under MOM)"
+  ],
+  "WSG": [
+    "Workforce Singapore"
+  ],
+  "NParks": [
+    "National Parks Board"
+  ],
+  "CPF": [
+    "Central Provident Fund Board (statutory board under MOM)"
+  ],
+  "HD": [
+    "Housing Division"
+  ],
+  "URA": [
+    "Urban Redevelopment Authority"
+  ],
+  "SPD": [
+    "Strategic Planning Division (division under MND)"
+  ],
+  "BCA": [
+    "Building and Construction Authority"
+  ],
+  "ID": [
+    "Infrastructure Division (division under MND)"
+  ],
+  "HDB": [
+    "Housing and Development Board (statutory board under MND)"
+  ],
+  "FSD": [
+    "Family Services Division (division under MSF)"
+  ],
+  "NCSS": [
+    "National Council of Social Service"
+  ],
+  "CEA": [
+    "Council for Estate Agencies"
+  ],
+  "SSD": [
+    "Social Services Division (division under MSF)"
+  ],
+  "NEA": [
+    "National Environment Agency"
+  ],
+  "WMD": [
+    "Water Management Division (division under MSE)"
+  ],
+  "EPD": [
+    "Environmental Policy Division (division under MSE)"
+  ],
+  "ECDA": [
+    "Early Childhood Development Agency (statutory board under MSF)"
+  ],
+  "IPD": [
+    "Industry Policy Division"
+  ],
+  "EDB": [
+    "Economic Development Board"
+  ],
+  "TPD": [
+    "Trade Policy Division (division under MTI)"
+  ],
+  "PUB": [
+    "Public Utilities Board (statutory board under MSE)",
+    "Public Utilities Board"
+  ],
+  "SFA": [
+    "Singapore Food Agency",
+    "Securities and Futures Act"
+  ],
+  "STB": [
+    "Singapore Tourism Board"
+  ],
+  "ESG": [
+    "Enterprise Singapore (statutory board under MTI)"
+  ],
+  "JTC": [
+    "Jurong Town Corporation",
+    "JTC Corporation"
+  ],
+  "EMA": [
+    "Energy Market Authority"
+  ],
+  "CCCS": [
+    "Competition and Consumer Commission of Singapore"
+  ],
+  "A*STAR": [
+    "Agency for Science, Technology and Research (statutory board under MTI)"
+  ],
+  "ATP": [
+    "Air Transport Policy (division under MOT)"
+  ],
+  "LTP": [
+    "Land Transport Policy (division under MOT)"
+  ],
+  "LTA": [
+    "Land Transport Authority (statutory board under MOT)"
+  ],
+  "CAAS": [
+    "Civil Aviation Authority of Singapore"
+  ],
+  "HLB": [
+    "Hotels Licensing Board (statutory board under MTI)"
+  ],
+  "PSD": [
+    "Public Service Division (division under PMO)"
+  ],
+  "MPA": [
+    "Maritime and Port Authority of Singapore"
+  ],
+  "SNDGO": [
+    "Smart Nation and Digital Government Office (division under PMO) "
+  ],
+  "ISTANA": [
+    "The Istana"
+  ],
+  "AGC": [
+    "Attorney-General's Chambers"
+  ],
+  "PARL": [
+    "Parliament of Singapore"
+  ],
+  "MAS": [
+    "Monetary Authority of Singapore (statutory board under PMO)"
+  ],
+  "4D": [
+    "4-Digits Lottery"
+  ],
+  "CSC": [
+    "Civil Service College (statutory board under PMO)",
+    "Community Sports Club"
+  ],
+  "IHiS": [
+    "Integrated Health Information Systems"
+  ],
+  "5 C's": [
+    "5 Cs of Singapore: Cash, Car, Credit card, Condominium, Country club"
+  ],
+  "CNB": [
+    "Central Narcotics Bureau"
+  ],
+  "IDA": [
+    "Infocomm Development Authority of Singapore"
+  ],
+  "ICA": [
+    "Immigration & Checkpoints Authority"
+  ],
+  "6 C's": [
+    "6 C's of Singapore: careerCash, Car, credit card, condominium, country club"
+  ],
+  "NRF": [
+    "National Research Foundation"
+  ],
+  "DHS": [
+    "Defence Science and Technology Agency",
+    "Dunman High School"
+  ],
+  "PSA": [
+    "Port of Singapore Authority"
+  ],
+  "NUS": [
+    "National University of Singapore"
+  ],
+  "SIA": [
+    "Singapore Airlines"
+  ],
+  "RHT": [
+    "Road Hunter token"
+  ],
+  "SGX": [
+    "Singapore Exchange"
+  ],
+  "IP": [
+    "Intellectual Property Office of Singapore",
+    "Integrated Programme"
+  ],
+  "SMU": [
+    "Singapore Management University"
+  ],
+  "WSQ": [
+    "Workforce Skills Qualifications"
+  ],
+  "SMRT": [
+    "Singapore Mass Rapid Transit",
+    "SMRT Corporation"
+  ],
+  "TOD": [
+    "Transit-Oriented Development"
+  ],
+  "SPT": [
+    "Skills Programme for Turnaround"
+  ],
+  "S$": [
+    "Silver Support Scheme"
+  ],
+  "SUTD": [
+    "Singapore University of Technology and Design"
+  ],
+  "WTS": [
+    "Workfare Training Support"
+  ],
+  "PCG": [
+    "Police Coast Guard"
+  ],
+  "HTA": [
+    "Home Team Academy"
+  ],
+  "HTSC": [
+    "Homes Team Science and Technology Agency"
+  ],
+  "GRF": [
+    "Ground Response Force"
+  ],
+  "VSC": [
+    "Volunteer Special Constabulary"
+  ],
+  "ERT": [
+    "Emergency Response Team"
+  ],
+  "CID": [
+    "Criminal Investigation Department (under SPF)"
+  ],
+  "SPS": [
+    "Singapore Prison Service",
+    "Saint Patrick's School"
+  ],
+  "SOC": [
+    "Special Operations Command (SPF specialized unit)",
+    "Security Operations Center"
+  ],
+  "K9": [
+    "Police Dog Unit (under SPF)"
+  ],
+  "NPAP": [
+    "Neighbourhood Police Post"
+  ],
+  "NPC": [
+    "Neighbourhood Police Centre"
+  ],
+  "COPS": [
+    "Community Policing System"
+  ],
+  "eIACS": [
+    "Enhanced Immigration Automated Clearance System"
+  ],
+  "APEX": [
+    "Automated Passenger Exit (ICA system)"
+  ],
+  "BIODS": [
+    "Biometric Identification of Outbound Departures System (ICA System)"
+  ],
+  "HAZMAT": [
+    "Hazardous Materials"
+  ],
+  "EMSD": [
+    "Emergency Medical Services Department (under SCDF)"
+  ],
+  "DART": [
+    "Disaster Assistance and Rescue Team (SCDF specialized unit)"
+  ],
+  "VELOS": [
+    "Vehicular Entry & Exit System (ICA system)"
+  ],
+  "NFEC": [
+    "National Fire and Emergency Preparedness Council"
+  ],
+  "CDERT": [
+    "Company Disaster Emergency Response Team"
+  ],
+  "CIQ": [
+    "Customs, Immigration & Quarantine (border control term, ICA related)"
+  ],
+  "AED": [
+    "Automated External Defibrillator"
+  ],
+  "NS": [
+    "National Service"
+  ],
+  "CBRN": [
+    "Chemical, Biological, Radiological, Nuclear"
+  ],
+  "NSmen": [
+    "Operationally Ready National Servicemen"
+  ],
+  "RISE": [
+    "Ready, in-Service, Engaged (SCDF training program)"
+  ],
+  "NSF": [
+    "National Serviceman Full-Time (MHA/MINDEF term)",
+    "Full-time National Servicemen",
+    "Full-time National Serviceman"
+  ],
+  "SPFNSF": [
+    "Singapore Police Force National Serviceman Full-Time"
+  ],
+  "IPPT": [
+    "Individual Physical Proficiency Test"
+  ],
+  "DRC": [
+    "Drug Rehabilitation Centre"
+  ],
+  "SCDFNSF": [
+    "Singapore Civil Defence Force National Serviceman Full-Time"
+  ],
+  "MIS": [
+    "Movement Restriction Order"
+  ],
+  "SCM": [
+    "Secure Community Monitoring"
+  ],
+  "TAG": [
+    "Throughcare Aftercare Group"
+  ],
+  "COE": [
+    "Certificate of Entitlement"
+  ],
+  "PO": [
+    "Personal Order {MHA legislative framework}"
+  ],
+  "PSLE": [
+    "Primary School Leaving Examination"
+  ],
+  "CIR": [
+    "Certificate of Identity and Re-entry"
+  ],
+  "EPR": [
+    "Emergency Preparedness Regulations"
+  ],
+  "HT": [
+    "Home Team"
+  ],
+  "SAFRA": [
+    "Singapore Armed Forces Reservist Association (MHA-related welfare organization for NSmen)",
+    "Singapore Armed Forces Reservists Association (lifestyle facilities, under MINDEF/SAF)"
+  ],
+  "ERP": [
+    "Electronic Road Pricing (MOT policy, but involves enforcement by SPF)"
+  ],
+  "JOC": [
+    "Joint Operations Centre"
+  ],
+  "SOP": [],
+  "IO": [
+    "Investigating Officer"
+  ],
+  "CI": [
+    "Criminal Investigation"
+  ],
+  "PPR": [
+    "Police Patrol Report"
+  ],
+  "OC": [
+    "Officer-in-Charge"
+  ],
+  "MHA_OPCEN": [
+    "MHA Operations Centre"
+  ],
+  "CCTV": [
+    "Closed-Circuit Television"
+  ],
+  "GPS": [
+    "Global Positioning System"
+  ],
+  "SGSecure": [
+    "Singapore's community-based movement to strengthen social defence",
+    "National counter-terrorism campaign"
+  ],
+  "DRL": [
+    "Driving Rehabilitation Programme "
+  ],
+  "RTA": [
+    "Road Traffic Act"
+  ],
+  "SVP": [
+    "Special Visitor Pass"
+  ],
+  "VTL": [
+    "Vaccinated Travel Lane"
+  ],
+  "TFC": [
+    "Traffic Fatal Collision (Traffic Police term)"
+  ],
+  "STP": [
+    "Student Pass"
+  ],
+  "LTVP": [
+    "Long-Term Visit Pass"
+  ],
+  "FD": [
+    "Foreign Domestic Worker"
+  ],
+  "FIC": [
+    "Fire Investigation Committee"
+  ],
+  "FRC": [
+    "Fire Resistance Code"
+  ],
+  "FSCD": [
+    "Fire Safety and Shelter Department (SCDF)"
+  ],
+  "FIP": [
+    "Fire Incident Prevention (SCDF program)"
+  ],
+  "EP": [
+    "Employment Pass (MOM document, but ICA issues/enforces)"
+  ],
+  "WP": [
+    "Work Permit (MOM document, but ICA issues/enforces)",
+    "Workers' Party of Singapore"
+  ],
+  "SPR": [
+    "Singapore Permanent Resident"
+  ],
+  "POC": [
+    "Place of Call"
+  ],
+  "NC": [
+    "new citizen (ica status)"
+  ],
+  "AA": [
+    "Asian Aerospace"
+  ],
+  "FRG": [
+    "Fire and Rescue Group"
+  ],
+  "AJ": [],
+  "CIC": [
+    "Citizen Identity Card (IC)"
+  ],
+  "ACS": [
+    "anglo-chinese school"
+  ],
+  "ACRES": [
+    "Animal Concerns Research and Education Society"
+  ],
+  "AG": [
+    "Attorney-General"
+  ],
+  "AJC": [
+    "Anderson Junior College"
+  ],
+  "HTX": [
+    "Home Team Science and Technology Agency (HTX, a statutory board of MHA)"
+  ],
+  "AMK": [
+    "Ang Mo Kio"
+  ],
+  "ALL": [
+    "Animal Lovers League"
+  ],
+  "AMP": [
+    "Association of Muslim Professionals"
+  ],
+  "ANDSS": [
+    "Anderson Secondary School"
+  ],
+  "APP": [
+    "Assistant Public Prosecutor"
+  ],
+  "APPLES": [
+    "Application for Passport On-line Electronic System"
+  ],
+  "AY": [
+    "Academic Year"
+  ],
+  "AR": [
+    "Assistant Registrar of the Supreme Court"
+  ],
+  "AYE": [
+    "Ayer Rajah Expressway"
+  ],
+  "AWWA": [
+    "Asian Women's Welfare Association"
+  ],
+  "ASRJC": [
+    "Anderson Serangoon Junior College"
+  ],
+  "AWARE": [
+    "Association of Women for Action and Research"
+  ],
+  "BB": [
+    "Boys' Brigade"
+  ],
+  "BBFA": [],
+  "BCM": [
+    "Bus Contracting Model"
+  ],
+  "BC": [
+    "Birth certificate"
+  ],
+  "BDK": [],
+  "BBDC": [
+    "Bukit Batok Driving Centre"
+  ],
+  "BBSS": [
+    "Bukit Batok Secondary School",
+    "Beatty Secondary School"
+  ],
+  "BDS": [
+    "Bedok South Secondary School"
+  ],
+  "BGR": [
+    "boy-girl relationship"
+  ],
+  "BJ": [
+    "Bugis Junction"
+  ],
+  "BF": [
+    "Buddhist Fellowship"
+  ],
+  "BKE": [
+    "Bukit Timah Expressway"
+  ],
+  "BBT": [
+    "Bukit Batok",
+    "Bubble Tea"
+  ],
+  "BMT": [
+    "Basic Military Training"
+  ],
+  "BPT": [
+    "Basic Police Training"
+  ],
+  "BPLRT": [
+    "Bukit Panjang LRT Line"
+  ],
+  "BPJ": [
+    "Bukit Panjang"
+  ],
+  "BRT": [
+    "Basic Rescue Training"
+  ],
+  "BPP": [
+    "Bukit Panjang Plaza"
+  ],
+  "BPGHS": [
+    "Bukit Panjang Government High School"
+  ],
+  "BSEP": [
+    "Bus Service Enhancement Programme"
+  ],
+  "BTO": [
+    "Build To Order (Housing Development Board)"
+  ],
+  "BTT": [
+    "Basic Theory Test"
+  ],
+  "CBD": [
+    "Central Business District"
+  ],
+  "BTYSS": [
+    "Beatty Secondary School"
+  ],
+  "BTS": [
+    "Baptist Theological Seminary",
+    "Bukit Timah Secondary School"
+  ],
+  "BWSS": [
+    "Bowen Secondary School"
+  ],
+  "BTVSS": [
+    "Bukit View Secondary School"
+  ],
+  "CBP": [
+    "Changi Business Park"
+  ],
+  "CBPU": [
+    "Central Building Plan Unit"
+  ],
+  "CCA": [
+    "co-curricular activity"
+  ],
+  "CCHS": [
+    "Chung Cheng High School"
+  ],
+  "BVSS": [
+    "Buona Vista Secondary School"
+  ],
+  "CCR": [
+    "Core Central Region"
+  ],
+  "CCL": [
+    "Circle MRT Line"
+  ],
+  "CCK": [
+    "Choa Chu Kang"
+  ],
+  "CDAC": [
+    "Chinese Development Assistance Council"
+  ],
+  "CDC": [
+    "Community Development Council"
+  ],
+  "CCC": [
+    "Chinese Chamber of Commerce; Citizen's Consultative Committee"
+  ],
+  "CHC": [
+    "City Harvest Church"
+  ],
+  "CHS": [
+    "Catholic High School"
+  ],
+  "CJ": [
+    "Chief Justice"
+  ],
+  "CHIJ": [
+    "Convent of the Holy Infant Jesus"
+  ],
+  "CIS": [
+    "Corporate Individual Scheme"
+  ],
+  "CEPAS": [
+    "Contactless e-Purse Application System"
+  ],
+  "CJC": [
+    "Catholic Junior College"
+  ],
+  "CMC": [
+    "Chinese Media & Communication"
+  ],
+  "CMPB": [
+    "Central Manpower Base"
+  ],
+  "CNA": [
+    "Channel NewsAsia"
+  ],
+  "CSM": [
+    "The City Square Mall"
+  ],
+  "CTE": [
+    "Central Expressway"
+  ],
+  "CRL": [
+    "Cross Island MRT Line"
+  ],
+  "CS": [
+    "Century Square"
+  ],
+  "CPIB": [
+    "Corrupt Practices Investigation Bureau"
+  ],
+  "CTSS": [
+    "Clementi Town Secondary School"
+  ],
+  "CIP": [
+    "Community Involvement Project (now replaced by 'VIA')",
+    "Critical Infocomm Technology Resource Programme (technology manpower policy under IMDA/MCI)"
+  ],
+  "COTMA": [
+    "COVID-19 (Temporary Measures) Act 202"
+  ],
+  "D & D": [
+    "Dinner and Dance"
+  ],
+  "CWP": [
+    "Causeway Point"
+  ],
+  "DBS": [
+    "Development Bank of Singapore"
+  ],
+  "CWS": [
+    "Cat Welfare Society"
+  ],
+  "D & N": [
+    "Drew & Napier LLC"
+  ],
+  "DBSS": [
+    "Design, Build and Sell Scheme"
+  ],
+  "DJ": [
+    "District Judge"
+  ],
+  "CWO": [
+    "Corrective Work Order",
+    "Chief Warrant Officer"
+  ],
+  "DMN": [
+    "Dunman Secondary School"
+  ],
+  "DPP": [
+    "Deputy Public Prosecutor"
+  ],
+  "DSTA": [
+    "Defence Science and Technology Agency"
+  ],
+  "DTE": [
+    "Downtown East"
+  ],
+  "DTL": [
+    "Downtown MRT line"
+  ],
+  "EDP": [
+    "Endeavour Primary School"
+  ],
+  "EC": [
+    "Executive Condominium"
+  ],
+  "ECP": [
+    "East Coast Park",
+    "East Coast Parkway",
+    "East Coast Expressway"
+  ],
+  "eGAP": [
+    "eGovernment Action Plan"
+  ],
+  "EJC": [
+    "Eunoia Junior College"
+  ],
+  "DR": [
+    "Deputy Registrar of the Supreme Court or the Subordinate Courts of Singapore",
+    "Drive"
+  ],
+  "EFSS": [
+    "Edgefield Secondary School"
+  ],
+  "ESPS": [
+    "East Spring Primary School"
+  ],
+  "ECPS": [
+    "East Coast Primary School"
+  ],
+  "EWL": [
+    "East-West MRT Line"
+  ],
+  "FT": [
+    "Foreign Talent"
+  ],
+  "FHSS": [
+    "Fuhua Secondary School"
+  ],
+  "FCBC": [
+    "Faith Community Baptist Church"
+  ],
+  "FAS": [
+    "Football Association of Singapore",
+    "Financial Assistance Scheme"
+  ],
+  "FTT": [
+    "Final Theory Test"
+  ],
+  "FG": [
+    "Filmgarde Cineplexes"
+  ],
+  "FMPS": [
+    "Fairfield Methodist Primary School"
+  ],
+  "FMSS": [
+    "Fairfield Methodist Secondary School"
+  ],
+  "GAD": [],
+  "GAS": [
+    "Go-Ahead Singapore"
+  ],
+  "GCE": [
+    "General Certificate of Education"
+  ],
+  "GCM": [
+    "Government Contracting Model"
+  ],
+  "GEP": [
+    "Gifted Education Programme"
+  ],
+  "GB": [
+    "Girls' Brigade"
+  ],
+  "GBTB": [
+    "Gardens by the Bay"
+  ],
+  "GE": [
+    "General Election"
+  ],
+  "GWA": [
+    "GEMS World Academy"
+  ],
+  "GV": [
+    "Golden Village"
+  ],
+  "GRC": [
+    "Group Representation Constituency"
+  ],
+  "GST": [
+    "Goods and Services Tax"
+  ],
+  "GIS": [
+    "Global Indian School",
+    "Geographic Information System"
+  ],
+  "GCT": [],
+  "HCI": [
+    "Hwa Chong Institution"
+  ],
+  "GWC": [
+    "Great World City"
+  ],
+  "GP": [
+    "General Practitioner",
+    "General Paper",
+    "Gladiolus Place"
+  ],
+  "HG": [],
+  "GYSS": [
+    "Guangyang Secondary School"
+  ],
+  "HCJC": [
+    "Hwa Chong Junior College"
+  ],
+  "HEB": [
+    "Hindu Endowments Board"
+  ],
+  "HOGC": [
+    "Heart of God Church"
+  ],
+  "HYSS": [
+    "Hua Yi Secondary School"
+  ],
+  "HSCS": [
+    "Hai Sing Catholic School"
+  ],
+  "HPPS": [
+    "Henry Park Primary School"
+  ],
+  "HS": [
+    "Hougang Secondary School",
+    "Historic Site"
+  ],
+  "ICBC": [],
+  "GSS": [
+    "Great Singapore Sale"
+  ],
+  "IC": [
+    "Identity Card"
+  ],
+  "IJC": [
+    "Innova Junior College"
+  ],
+  "HIP": [
+    "Home Improvement Programme"
+  ],
+  "ICS": [
+    "International Community School of Singapore"
+  ],
+  "IR": [
+    "Integrated Resort"
+  ],
+  "IMH": [
+    "Institute of Mental Health"
+  ],
+  "ISA": [
+    "Internal Security Act"
+  ],
+  "JB": [],
+  "ISD": [
+    "Internal Security Department"
+  ],
+  "IRO": [
+    "Inter-Religious Organisation of Singapore"
+  ],
+  "IUP": [
+    "Interim Upgrading Programme"
+  ],
+  "J": [
+    "Judge",
+    "Judge (plural: JJ)"
+  ],
+  "J8": [
+    "Junction 8 Shopping Centre"
+  ],
+  "JA": [
+    "Judge of Appeal"
+  ],
+  "JCA": [
+    "Jewel Changi Airport"
+  ],
+  "JEM": [
+    "Jurong East Mall"
+  ],
+  "JBJ": [
+    "Joshua Benjamin Jeyaretnam"
+  ],
+  "JC": [
+    "Judicial Commissioner",
+    "Junior College"
+  ],
+  "JJC": [
+    "Jurong Junior College"
+  ],
+  "JP": [
+    "Jurong Point Shopping Mall"
+  ],
+  "JEMP": [
+    "Jurong East Modification Project"
+  ],
+  "JRL": [
+    "Jurong Region Line"
+  ],
+  "JPJC": [
+    "Jurong Pioneer Junior College"
+  ],
+  "JYSS": [
+    "Juying Secondary School"
+  ],
+  "JPS": [
+    "Jurong Primary School"
+  ],
+  "KL": [],
+  "KIV": [
+    "Keep In View"
+  ],
+  "KJE": [
+    "Kranji Expressway"
+  ],
+  "KCPSS": [
+    "Kuo Chuan Presbyterian Secondary School"
+  ],
+  "LHL": [],
+  "LCK": [],
+  "KK": [
+    "Kandang Kerbau Women's and Children's Hospital"
+  ],
+  "KMSPKS": [
+    "Kong Meng San Phor Kark See Monastery"
+  ],
+  "JSS": [
+    "Jurong Secondary School",
+    "Jobs Support Scheme (COVID-19 wage support under MOF)"
+  ],
+  "LCCS": [
+    "Lutheran Community Care Services"
+  ],
+  "KTPH": [
+    "Khoo Teck Puat Hospital"
+  ],
+  "LKY": [],
+  "KPE": [
+    "Kallang-Paya Lebar Expressway"
+  ],
+  "LRT": [
+    "Light Rapid Transit"
+  ],
+  "LYSS": [
+    "Loyang Secondary School"
+  ],
+  "MAH": [
+    "Mount Alvernia Hospital"
+  ],
+  "MBLM": [
+    "Marina Bay Link Mall"
+  ],
+  "LKCM": [
+    "Lee Kong Chian School of Medicine"
+  ],
+  "MBFC": [
+    "Marina Bay Financial Centre"
+  ],
+  "MBS": [
+    "Marina Bay Sands"
+  ],
+  "LUP": [
+    "Lift Upgrading Programme"
+  ],
+  "MBSC": [
+    "Marina Bay Singapore Countdown"
+  ],
+  "MCI": [
+    "Ministry of Communications and Information"
+  ],
+  "MCD": [
+    "Ministry of Community Development"
+  ],
+  "MDA": [
+    "Media Development Authority"
+  ],
+  "MC": [
+    "Medical Certificate"
+  ],
+  "MCS": [
+    "Methodist Church in Singapore"
+  ],
+  "MCE": [
+    "Marina Coastal Expressway",
+    "Managed Care Entity"
+  ],
+  "MCYS": [
+    "Ministry of Community Development, Youth and Sports"
+  ],
+  "MGS": [
+    "Methodist Girls' School"
+  ],
+  "MJC": [
+    "Meridian Junior College"
+  ],
+  "MDIS": [
+    "Management Development Institute of Singapore"
+  ],
+  "MI": [
+    "Millennia Institute "
+  ],
+  "MJR": [
+    "Manjusri Secondary School"
+  ],
+  "MOS": [
+    "Minister of State"
+  ],
+  "MOHH": [
+    "Ministry of Health Holdings"
+  ],
+  "MINDS": [
+    "Movement for the Intellectually Disabled Of Singapore"
+  ],
+  "MP": [
+    "Member of Parliament"
+  ],
+  "MPS": [
+    "Meet the People Session"
+  ],
+  "MSL": [
+    "Marsiling Secondary School"
+  ],
+  "MENDAKI": [
+    "Yayasan MENDAKI",
+    "Council for the Development of Singapore Muslim Community"
+  ],
+  "MRT": [
+    "Mass Rapid Transit"
+  ],
+  "MSCP": [
+    "Multi Storey Car Park"
+  ],
+  "MSHS": [
+    "Maris Stella High School"
+  ],
+  "NAPFA": [
+    "National Physical Fitness Award"
+  ],
+  "MSS": [
+    "Meridian Secondary School",
+    "Montfort Secondary School"
+  ],
+  "NAPS": [
+    "Ngee Ann Primary School"
+  ],
+  "NAS": [
+    "National Archives of Singapore"
+  ],
+  "MUIS": [
+    "MUIS (Majlis Ugama Islam Singapura)"
+  ],
+  "NAFA": [
+    "Nanyang Academy of Fine Arts"
+  ],
+  "NCDCC": [
+    [
+      [
+        "National Civil Defence Cadet Corps"
+      ]
+    ]
+  ],
+  "NCS": [
+    "National Computer Systems"
+  ],
+  "NCC": [
+    "National Cadet Corps",
+    "New Creation Church"
+  ],
+  "NE": [
+    "National Education"
+  ],
+  "NDP": [
+    "National Day Parade"
+  ],
+  "NCMP": [
+    "Non-constituency Member of Parliament"
+  ],
+  "NEL": [
+    "North East Line"
+  ],
+  "NETS": [
+    "network for electronic transfers"
+  ],
+  "NHG": [
+    "National Healthcare Group"
+  ],
+  "NIE": [
+    "National Institute of Education"
+  ],
+  "NJC": [
+    "National Junior College"
+  ],
+  "NHHS": [
+    "Nan Hua High School"
+  ],
+  "NKF": [
+    "National Kidney Foundation"
+  ],
+  "NPARKS": [
+    "National Parks Board"
+  ],
+  "NMS": [
+    "National Museum of Singapore"
+  ],
+  "NMP": [
+    "Nominated Member of Parliament"
+  ],
+  "NPCC": [
+    "National Police Cadet Corps"
+  ],
+  "NRIC": [
+    "National Registration Identity Card"
+  ],
+  "NSE": [
+    "North South Expressway"
+  ],
+  "NSL": [
+    "North-South MRT line"
+  ],
+  "NRP": [
+    "Neighbourhood Renewal Programme"
+  ],
+  "NSTB": [
+    "National Science and Technology Board"
+  ],
+  "NTFGH": [
+    "Ng Teng Fong General Hospital"
+  ],
+  "NTC": [
+    "National Technical Certificate"
+  ],
+  "NTU": [
+    "Nanyang Technological University"
+  ],
+  "NUHS": [
+    "National University Health System"
+  ],
+  "NTPS": [
+    "New Town Primary School"
+  ],
+  "NTUC": [
+    "National Trade Union Congress"
+  ],
+  "NUH": [
+    "National University Hospital"
+  ],
+  "NWC": [
+    "National Wages Council"
+  ],
+  "NYK": [
+    "Nanyang Kindergarten"
+  ],
+  "OB": [
+    "Out of Bounds"
+  ],
+  "NYJC": [
+    "Nanyang Junior College"
+  ],
+  "NUSH": [
+    "National University of Singapore High School of Mathematics and Science"
+  ],
+  "NYPS": [
+    "Nanyang Primary School"
+  ],
+  "OBS": [
+    "Outward Bound Singapore"
+  ],
+  "NYGH": [
+    "Nanyang Girls' High School"
+  ],
+  "OCBC": [
+    "Oversea-Chinese Banking Corporation"
+  ],
+  "OCR": [
+    "Outside of Central Region"
+  ],
+  "ORD": [
+    "Operationally Ready Date"
+  ],
+  "OFS": [
+    "Overseas Family School"
+  ],
+  "OPSS": [
+    "Orchid Park Secondary School"
+  ],
+  "OSS": [
+    "Outram Secondary School"
+  ],
+  "OCS": [
+    "Officer Cadet School (Singapore)"
+  ],
+  "OUB": [
+    "Overseas Union Bank"
+  ],
+  "PAP": [
+    "People's Action Party"
+  ],
+  "PE": [
+    "Physical Education"
+  ],
+  "PDI": [
+    "Private Driving Instructor"
+  ],
+  "O$P$": [
+    "owe money, pay money – used in loan sharks' harassing graffiti."
+  ],
+  "PES": [
+    "Physical Employment Status"
+  ],
+  "PCK": [
+    "Phua Chu Kang, a popular TV Sitcom"
+  ],
+  "PFP": [
+    "Polytechnic Foundation Programme"
+  ],
+  "PG": [
+    "Punggol"
+  ],
+  "PJC": [
+    "Pioneer Junior College"
+  ],
+  "PIE": [
+    "Pan Island Expressway"
+  ],
+  "PGP": [
+    "Prince George's Park Residences, NUS"
+  ],
+  "PHS": [
+    "Presbyterian High School",
+    "Promoting Health in Schools"
+  ],
+  "PLQ": [
+    "Paya Lebar Quarter"
+  ],
+  "PLS": [
+    "Paya Lebar Square"
+  ],
+  "PLU": [
+    "People Like Us, a gay equality lobby group"
+  ],
+  "POSB": [
+    "Post Office Savings Bank"
+  ],
+  "PROGRESS": [
+    "PROGRESS Party"
+  ],
+  "PSC": [
+    "Public Service Commission"
+  ],
+  "PSR": [
+    "Pasar Ris"
+  ],
+  "POFMA": [
+    "Protection from Online Falsehoods and Manipulation Act 2019"
+  ],
+  "PR": [
+    "Permanent resident"
+  ],
+  "PDL": [
+    "Provisional Driving Licence"
+  ],
+  "QPS": [
+    "Qihua Primary School"
+  ],
+  "PT": [
+    "POINT",
+    "Practical Test or Physical Training",
+    "Physical Therapy"
+  ],
+  "QDL": [
+    "Qualified Driving Licence"
+  ],
+  "PGVP": [
+    "Punggol View Primary School"
+  ],
+  "PSP": [
+    "Progress Singapore Party"
+  ],
+  "PWD": [
+    "Public Works Department"
+  ],
+  "R & T": [
+    "Rajah & Tann, a law firm"
+  ],
+  "RC": [
+    "Residents' Committee"
+  ],
+  "RCY": [
+    "Singapore Red Cross Youth"
+  ],
+  "REP": [
+    "Renaissance Engineering Programme"
+  ],
+  "RCS": [
+    "Radio Corporation of Singapore"
+  ],
+  "RGS": [
+    "Raffles Girls' School"
+  ],
+  "RCR": [
+    "Rest of Central Region",
+    "Restricted Card Risk"
+  ],
+  "RJ": [
+    "Raffles Junior College"
+  ],
+  "RGPS": [
+    "Raffles Girls' Primary School"
+  ],
+  "RI": [
+    "Raffles Institution"
+  ],
+  "RRP": [
+    "Recommended Retail Price"
+  ],
+  "ROM": [
+    "Registry of Marriages"
+  ],
+  "RMPS": [
+    "Radin Mas Primary School"
+  ],
+  "RS": [
+    "Rosyth School"
+  ],
+  "RSN": [
+    "Republic of Singapore Navy"
+  ],
+  "RSAF": [
+    "Republic of Singapore Air Force"
+  ],
+  "RWS": [
+    "Resorts World Sentosa"
+  ],
+  "RVHS": [
+    "River Valley High School"
+  ],
+  "SAF": [
+    "Singapore Armed Forces"
+  ],
+  "SAJC": [
+    "St Andrew's Junior College"
+  ],
+  "RVRC": [
+    "Ridge View Residential College, NUS"
+  ],
+  "RSS": [
+    "Riverside Secondary School",
+    "Republic of Singapore Ship"
+  ],
+  "SAM": [
+    "Singapore Art Museum"
+  ],
+  "SAL": [
+    "Singapore Academy of Law"
+  ],
+  "SANA": [
+    "Singapore Anti-Narcotics Association"
+  ],
+  "SAP": [
+    "Special Assistance Plan"
+  ],
+  "SAWL": [
+    "Singapore Association of Women Lawyers"
+  ],
+  "SAS": [
+    "Singapore American School"
+  ],
+  "SBF": [
+    "Singapore Buddhist Federation"
+  ],
+  "SBI": [
+    "State Bank of India"
+  ],
+  "SAR": [
+    "Senior Assistant Registrar of the Supreme Court of Singapore"
+  ],
+  "SBW": [],
+  "SBS": [
+    "SBS Transit"
+  ],
+  "SBM": [
+    "Singapore Buddhist Mission"
+  ],
+  "SC": [
+    "Senior Counsel"
+  ],
+  "SDJ": [],
+  "SChO": [
+    "Singapore Chemistry Olympiad"
+  ],
+  "SBYM": [
+    "Singapore Buddhist Youth Mission"
+  ],
+  "SCGS": [
+    "Singapore Chinese Girls' School"
+  ],
+  "SDP": [
+    "Singapore Democratic Party"
+  ],
+  "SDA": [
+    "Singapore Democratic Alliance"
+  ],
+  "SFC": [
+    "SkillsFuture Credit"
+  ],
+  "SDU": [
+    "Social Development Unit"
+  ],
+  "SERS": [
+    "Selective En bloc Redevelopment Scheme"
+  ],
+  "SFI": [
+    "Singapore Food Industries"
+  ],
+  "SG": [
+    "Solicitor-General"
+  ],
+  "SGH": [
+    "Singapore General Hospital"
+  ],
+  "SIM": [
+    "Singapore Institute of Management"
+  ],
+  "SICC": [
+    "Singapore Island Country Club"
+  ],
+  "SILE": [
+    "Singapore Institute of Legal Education"
+  ],
+  "SIO": [
+    "Senior Investigation Officer"
+  ],
+  "SILS": [
+    "Singapore Institute of Labour Studies"
+  ],
+  "SGSS": [
+    "St. Gabriel’s Secondary School",
+    "Serangoon Garden Secondary School"
+  ],
+  "SINDA": [
+    "Singapore Indian Development Association"
+  ],
+  "SK": [],
+  "SJAB": [
+    "St. John Ambulance Brigade"
+  ],
+  "SJI": [
+    "St. Joseph's Institution"
+  ],
+  "SIT": [
+    "Singapore Institute of Technology"
+  ],
+  "SJII": [
+    "St. Joseph's Institution International"
+  ],
+  "SJIJ": [
+    "St. Joseph's Institution Junior"
+  ],
+  "SKH": [
+    "Sengkang General Hospital"
+  ],
+  "SLO": [
+    "Singapore Lyric Opera"
+  ],
+  "SLS": [
+    "Sim Lim Square"
+  ],
+  "SMSS": [
+    "St. Margaret's Secondary School"
+  ],
+  "SLT": [
+    "Sim Lim Tower"
+  ],
+  "SMF": [
+    "Singapore Manufacturers' Federation"
+  ],
+  "SLSS": [
+    "Si Ling Secondary School"
+  ],
+  "SNO": [
+    "Special Needs Officer"
+  ],
+  "SMO": [
+    "Singapore Mathematics Olympiad"
+  ],
+  "SNOC": [
+    "Singapore National Olympic Council"
+  ],
+  "SOS": [
+    "Samaritans of Singapore"
+  ],
+  "SNPC": [
+    "Singapore National Paralympic Council"
+  ],
+  "SPA": [
+    "School-based Practical Assessment"
+  ],
+  "SPH": [
+    "Singapore Press Holdings"
+  ],
+  "SPG": [
+    "sarong party girl"
+  ],
+  "SOTA": [
+    "School of the arts, Singapore"
+  ],
+  "SPhO": [
+    "Singapore Physics Olympiad"
+  ],
+  "SPCA": [
+    "Society for the Prevention of Cruelty to Animals"
+  ],
+  "SS": [
+    "Social Studies"
+  ],
+  "SRCS": [
+    "Singapore Red Cross Society"
+  ],
+  "SRJC": [
+    "Serangoon junior college"
+  ],
+  "SSDC": [
+    "Singapore Safety Driving Centre"
+  ],
+  "SSO": [
+    "Singapore Symphony Orchestra"
+  ],
+  "STV": [
+    "StarHub"
+  ],
+  "SSC": [
+    "Singapore Sports Council",
+    "Singapore Swimming Club"
+  ],
+  "SVPS": [
+    "South View Primary School"
+  ],
+  "STARIS": [
+    "SMRT Active Route Map Information System"
+  ],
+  "SYAS": [
+    "san yu adventist school"
+  ],
+  "SUSS": [
+    "Singapore University of Social Sciences"
+  ],
+  "SST": [
+    "School of Science and Technology, Singapore",
+    "School of Science and Technology"
+  ],
+  "SYF": [
+    "Singapore Youth Festival"
+  ],
+  "ST": [
+    "Singapore Technologies or The Straits Times or SingTel",
+    "Street"
+  ],
+  "SYT": [
+    "Sweet Young Thing"
+  ],
+  "TCHS": [
+    "The Chinese High School"
+  ],
+  "SYFC": [
+    "Singapore Youth Flying Club"
+  ],
+  "TBP": [
+    "Tiong Bahru Plaza"
+  ],
+  "SYOGOC": [
+    "Singapore Youth Olympic Games Organising Committee"
+  ],
+  "TCS": [
+    "Television Corporation of Singapore"
+  ],
+  "TA": [
+    "Temasek Academy",
+    "Therapeutic Alliance"
+  ],
+  "TEL": [
+    "Thomson–East Coast MRT line"
+  ],
+  "TJC": [
+    "Temasek Junior College"
+  ],
+  "TH": [
+    "Temasek Hall, NUS"
+  ],
+  "TIBS": [
+    "Trans-IsLland Bus Services"
+  ],
+  "TM": [
+    "Tampines Mall"
+  ],
+  "TKGS": [
+    "Tanjong Katong Girls' School"
+  ],
+  "TNS": [
+    "Tao Nan School"
+  ],
+  "TMJC": [
+    "Tampines Meridian Junior College"
+  ],
+  "TKSS": [
+    "Tanjong Katong Secondary School"
+  ],
+  "TMS": [
+    "Temasek Secondary School"
+  ],
+  "TOP": [
+    "Temporary Occupancy Permit"
+  ],
+  "TNP": [
+    "The New Paper"
+  ],
+  "TPJC": [
+    "Tampines Junior College"
+  ],
+  "TPY": [
+    "Toa Payoh"
+  ],
+  "TPS": [
+    "Tampines Primary School"
+  ],
+  "TTSH": [
+    "Tan Tock Seng Hospital"
+  ],
+  "TPSS": [
+    "Tampines Secondary School"
+  ],
+  "TTC": [
+    "Trinity Theological College"
+  ],
+  "TPG": [
+    "Tampines Primary School",
+    "Tanjong Pagar",
+    "Tuas Port"
+  ],
+  "TSS": [
+    "Tanglin Secondary School"
+  ],
+  "TTS": [
+    "Tanglin Trust School",
+    "Tower Transit Singapore"
+  ],
+  "UEN": [
+    "Unique Entity Number"
+  ],
+  "UP": [
+    "Usual Price"
+  ],
+  "UOB": [
+    "United Overseas Bank"
+  ],
+  "UWC": [
+    "United World College of South East Asia"
+  ],
+  "USS": [
+    "Universal Studios Singapore"
+  ],
+  "VJC": [
+    "Victoria Junior College"
+  ],
+  "VS": [
+    "Victoria School"
+  ],
+  "WDL": [
+    "Woodlands"
+  ],
+  "VSS": [
+    "Vegetarian Society"
+  ],
+  "WPS": [
+    "Woodgrove Primary School"
+  ],
+  "WS": [
+    "White Sands"
+  ],
+  "VWO": [
+    "Voluntary Welfare Organisation"
+  ],
+  "WGS": [
+    "Woodgrove Secondary School"
+  ],
+  "VIA": [
+    "Values in Action (replaces CIP)",
+    "Values in Action (national schools/community service learning, MOE schools)"
+  ],
+  "WDP": [
+    "Woodlands Primary School"
+  ],
+  "WongP": [
+    "WongPartnership LLP, a law firm"
+  ],
+  "WWSS": [
+    "Westwood Secondary School"
+  ],
+  "WSSS": [
+    "West Spring Secondary School"
+  ],
+  "WWP": [
+    "Waterway Point"
+  ],
+  "XMS": [
+    "Xinmin Secondary School"
+  ],
+  "YCKSS": [
+    "Yio Chu Kang Secondary School"
+  ],
+  "WSS": [
+    "Workfare Skills Support Scheme (subsidy under MOM/WSG)"
+  ],
+  "YJC": [
+    "Yishun Junior College"
+  ],
+  "YHSS": [
+    "Yuhua Secondary School"
+  ],
+  "YIJC": [
+    "Yishun Innova Junior College"
+  ],
+  "YIS": [],
+  "XMM": [
+    "Xiǎo mèi mèi (小妹妹, literally 'small girl')"
+  ],
+  "XHH": [
+    "Xiǎo Hùn Hùn (小混混, literally 'young gangster')"
+  ],
+  "YLL": [
+    "Yong Loo Lin School of Medicine"
+  ],
+  "YTSS": [
+    "Yishun Town Secondary School"
+  ],
+  "YNC": [
+    "Yale NUS College"
+  ],
+  "ZHPS": [
+    "Zhenghua Primary School"
+  ],
+  "YSS": [],
+  "ZHSS": [
+    "Zhonghua Secondary School"
+  ],
+  "ACS (J)": [
+    "Anglo-Chinese School (Junior)"
+  ],
+  "ZSS": [
+    "Zhenghua Secondary School"
+  ],
+  "ACM": [
+    "Asian Civilisations Museum"
+  ],
+  "ACS (P)": [
+    "Anglo-Chinese School Primary"
+  ],
+  "ACJC": [
+    "Anglo-Chinese Junior College"
+  ],
+  "ACS(I)": [
+    "Anglo-Chinese School (Independent)"
+  ],
+  "ACSBR": [
+    "Anglo-Chinese School (Barker Road)"
+  ],
+  "CCL or CC": [
+    "Circle Line"
+  ],
+  "AHS": [
+    "Anglican High School"
+  ],
+  "A & G": [
+    "Allen & Gledhill, a law firm"
+  ],
+  "AISS": [
+    "Ahmad Ibrahim Secondary School",
+    "Australian International School Singapore"
+  ],
+  "DTL or DT": [
+    "Downtown MRT Line"
+  ],
+  "EWL or EW": [
+    "East–West MRT Line"
+  ],
+  "FMPS or FFP": [
+    "Fairfield Methodist Primary School"
+  ],
+  "NEL or NE": [
+    "North East MRT line"
+  ],
+  "JRL or JR": [
+    "Jurong East MRT line"
+  ],
+  "NSL or NS": [
+    "North–South MRT Line"
+  ],
+  "PG or PGL": [],
+  "YP": [
+    "Young Punk"
+  ],
+  "NUSH or NUSHS": [
+    "National University of Singapore High School of Mathematics and Science"
+  ],
+  "STV or SH": [
+    "StarHub"
+  ],
+  "SBS or SBST": [
+    "SBS Transit"
+  ],
+  "RJ or RJC": [
+    "Raffles Junior College"
+  ],
+  "PLMGSS": [
+    "Paya Lebar Methodist Girls' School (Secondary)"
+  ],
+  "PLMGPS": [
+    "Paya Lebar Methodist Girls' School (Primary)"
+  ],
+  "SIA or SQ": [
+    "Singapore Airlines"
+  ],
+  "TEL or TE": [
+    "Thomson–East Coast MRT Line"
+  ],
+  "UWC or UWCSEA": [
+    "United World College of South East Asia"
+  ],
+  "BLK": [
+    "Block"
+  ],
+  "BT": [
+    "Bukit"
+  ],
+  "AVE": [
+    "Avenue"
+  ],
+  "YLL(SM)": [
+    "Yong Loo Lin School of Medicine"
+  ],
+  "BLVD": [
+    "Boulevard"
+  ],
+  "JLN": [
+    "Jalan"
+  ],
+  "TER": [
+    "Terrace"
+  ],
+  "RD": [
+    "Road"
+  ],
+  "PL": [
+    "Place"
+  ],
+  "CRES": [
+    "Crescent"
+  ],
+  "KG": [
+    "Kampong"
+  ],
+  "ABLY": [],
+  "CTR": [
+    "Centre",
+    "CENTRE"
+  ],
+  "ADMIN": [],
+  "SQ": [
+    "Square"
+  ],
+  "BLDG": [
+    "Building"
+  ],
+  "APT": [
+    "Apartment"
+  ],
+  "APTS": [
+    "Apartment"
+  ],
+  "BR": [],
+  "BUDD": [],
+  "BO": [
+    "Branch Office"
+  ],
+  "CATH": [],
+  "CH": [],
+  "CC": [
+    "Community Centre/Club"
+  ],
+  "CINES": [],
+  "CINE": [
+    "CINEMA"
+  ],
+  "CLUBHSE": [
+    "Clubhouse"
+  ],
+  "CONDO": [
+    "Condominium"
+  ],
+  "CP": [
+    "Carpark"
+  ],
+  "CHBRS": [
+    "Ministry of Defence's Chiefs and History Archives Building Singapore"
+  ],
+  "CPLX": [],
+  "DEPT": [],
+  "CT": [],
+  "CTRL": [
+    "Central Area"
+  ],
+  "CL": [
+    "CLOSE",
+    "Community Liaison"
+  ],
+  "DEVT": [
+    "Development"
+  ],
+  "DIV": [],
+  "C'WEALTH": [
+    "Commonwealth"
+  ],
+  "EDN": [
+    "Education"
+  ],
+  "ENGRG": [
+    "Engineering"
+  ],
+  "ENV": [],
+  "EST": [],
+  "E'WAY": [],
+  "FTY": [],
+  "FB": [
+    "Food Bridge"
+  ],
+  "GOVT": [],
+  "GDN": [
+    "GARDEN"
+  ],
+  "GR": [
+    "GROVE"
+  ],
+  "GDNS": [
+    "Gardens"
+  ],
+  "HQR": [],
+  "HOSP": [
+    "Hospital"
+  ],
+  "FC": [
+    "Food Centre"
+  ],
+  "HQRS": [],
+  "INSTN": [],
+  "INTL": [
+    "International"
+  ],
+  "HSE": [
+    "House"
+  ],
+  "INST": [],
+  "IND": [
+    "Industrial"
+  ],
+  "HTS": [
+    "HEIGHTS"
+  ],
+  "JNR": [
+    "Junior"
+  ],
+  "LIB": [],
+  "LOR": [],
+  "KM": [
+    "kilometre"
+  ],
+  "MAI": [],
+  "MANS": [],
+  "MAN": [],
+  "MIN": [],
+  "LK": [
+    "Land Information Network of Knowledge"
+  ],
+  "MET": [
+    "Metropolitan"
+  ],
+  "METH": [
+    "Methodist church in Singapore"
+  ],
+  "MAIS": [
+    "maisonettes"
+  ],
+  "MT": [],
+  "NATL": [],
+  "MKT": [
+    "MARKET"
+  ],
+  "MJD": [
+    "Mosque"
+  ],
+  "P": [
+    "Island"
+  ],
+  "NTH": [
+    "NORTH"
+  ],
+  "NPP": [
+    "Neighbourhood Police Posts"
+  ],
+  "O/S": [
+    "Open Space"
+  ],
+  "P/G": [
+    "Playground"
+  ],
+  "PK": [
+    "PARK"
+  ],
+  "PRI": [],
+  "PRESBY": [
+    "Presbyterian"
+  ],
+  "S": [],
+  "REDEVT": [
+    "Urban redevelopment"
+  ],
+  "POLY": [
+    "Polyclinic",
+    "Polytechnic"
+  ],
+  "SEC": [
+    "Secondary"
+  ],
+  "STH": [
+    "SOUTH"
+  ],
+  "S'PORE": [],
+  "SLE": [
+    "Seletar Expressway"
+  ],
+  "SCH": [
+    "Singapore Centre for Human Organizational and Leadership Learning"
+  ],
+  "STN": [],
+  "TG": [],
+  "TC": [
+    "Town Council"
+  ],
+  "U/C": [],
+  "TOWNHSE": [
+    "Townhouse"
+  ],
+  "TECH": [
+    "TECHNICAL"
+  ],
+  "ST.": [
+    "Singapore Armed Forces Institute of Non-Officer Training and Leadership"
+  ],
+  "VOC": [
+    "Vocational"
+  ],
+  "UPP": [
+    "UPPER"
+  ],
+  "TPE": [
+    "Tampines Expressway"
+  ],
+  "WAREHSE": [
+    "WAREHOUSE"
+  ],
+  "ABSS": [
+    "Assumption English School"
+  ],
+  "AAS": [
+    "Anglican Academic Scholarship"
+  ],
+  "ACS(P)": [
+    "Anglo Chinese School (Primary)"
+  ],
+  "ADON": [
+    "Assistant Director of Nursing"
+  ],
+  "ACS(J)": [
+    "Anglo Chinese School (Junior)"
+  ],
+  "ACS(BR)": [
+    "Anglo-Chinese School (Barker Road)"
+  ],
+  "ACU": [
+    "Asian Currency Unit"
+  ],
+  "ADL": [
+    "Activities of Daily Living"
+  ],
+  "AFI": [
+    "Alliance For Financial Inclusion"
+  ],
+  "AIM": [
+    "Applied Innovation Mentorship"
+  ],
+  "AIC": [
+    "Agency for Integrated Care"
+  ],
+  "AECES": [
+    "Association of Early Childhood Educators (Singapore)"
+  ],
+  "AICARE": [
+    "AIC Enhanced Referral"
+  ],
+  "AIYEC": [
+    "ASEAN-India Youth Exchange Programme"
+  ],
+  "ALS": [
+    "Ang Mo Kio Secondary School"
+  ],
+  "AMKSS": [
+    "Ang Mo Kio Secondary School"
+  ],
+  "ASS": [
+    "Army Supply System"
+  ],
+  "ASPIRE": [
+    "applied study in polytechnics and ITE review"
+  ],
+  "AML/CFT": [
+    "Anti-Money Laundering/Combating the Financing of Terrorism"
+  ],
+  "AV": [
+    "Antivirus"
+  ],
+  "APSN": [
+    "Association for Persons with Special Needs"
+  ],
+  "AVA": [
+    "Agri-Food & Veterinary Authority of Singapore"
+  ],
+  "BANSEA": [
+    "Business Angel Network Southeast Asia"
+  ],
+  "BI": [
+    "Business Improvement"
+  ],
+  "BCS": [
+    "BCA Academy"
+  ],
+  "BCBS": [
+    "Basel Committee on Banking Supervision"
+  ],
+  "BHSS": [
+    "Balestier Hill Secondary School"
+  ],
+  "BDSS": [
+    "Bedok South Secondary School"
+  ],
+  "BP": [],
+  "BIP": [
+    "Business Improvement Programme"
+  ],
+  "BEAMS": [
+    "Bishan-Ang Mo Kio Secondary School"
+  ],
+  "BM": [
+    "Bukit Merah Secondary School"
+  ],
+  "BMS": [
+    "Bukit Merah Secondary School"
+  ],
+  "BPR": [
+    "Business Process Re-engineering"
+  ],
+  "BRTC": [
+    "Basic Recruit Training Centre"
+  ],
+  "BTH": [
+    "Bukit Timah"
+  ],
+  "BSS": [
+    "Broadrick Secondary School"
+  ],
+  "BTG": [
+    "Bukit Timah"
+  ],
+  "CAA": [
+    "Competent Authority Agreement"
+  ],
+  "CAMB": [
+    "Cambodia"
+  ],
+  "Cap.": [
+    "Chapter"
+  ],
+  "CAT": [
+    "Centralised Assessment Team"
+  ],
+  "CCM": [
+    "Care Coordinator Manager"
+  ],
+  "CD": [
+    "Civil Defence"
+  ],
+  "CCO": [
+    "Care Coordinator"
+  ],
+  "CDF": [
+    "Children's Development Co-operative"
+  ],
+  "CCT": [
+    "Community Care Team"
+  ],
+  "CDG": [
+    "Cyber Defence Group",
+    "Capability Development Grant"
+  ],
+  "CFLT": [
+    "Centre for Financial Literacy"
+  ],
+  "CISS": [],
+  "CDP": [
+    "Central Provident Fund",
+    "Central Depository"
+  ],
+  "CFA": [
+    "Chartered Financial Analyst"
+  ],
+  "CHAS": [
+    "Community Health Assist Scheme"
+  ],
+  "CESS": [
+    "Chestnut Drive Secondary School"
+  ],
+  "CKSS": [
+    "Chung Cheng High School (Main)"
+  ],
+  "COC": [],
+  "CM": [
+    "Case Manager"
+  ],
+  "CRS": [
+    "Common Reporting Standard"
+  ],
+  "CMO": [
+    "Chief Medical Officer"
+  ],
+  "CSD": [
+    "Clementi Secondary School"
+  ],
+  "CSTF": [
+    "Cybersecurity Task Force"
+  ],
+  "DCO": [
+    "Defence Cyber Organisation"
+  ],
+  "DBU": [
+    "Domestic Banking Unit"
+  ],
+  "C4I": [
+    "Command, Control, Communications, Computers and Intelligence"
+  ],
+  "DDC": [
+    "Digital Defence Command"
+  ],
+  "DDoS": [
+    "Distributed Denial of Service"
+  ],
+  "DDP": [
+    "Defence Policy Department"
+  ],
+  "DIGITAL": [],
+  "DI scheme": [
+    "Deposit Insurance Scheme"
+  ],
+  "DIS": [
+    "Digital and Intelligence Service"
+  ],
+  "DDS": [
+    "Defence Technology & Systems Group"
+  ],
+  "DMPS": [
+    "Damai Secondary School"
+  ],
+  "DLP": [
+    "Data Loss Prevention"
+  ],
+  "DSA": [
+    "Direct School Admission"
+  ],
+  "DTC": [
+    "DIS Training Command"
+  ],
+  "DPM": [
+    "Deputy Prime Minister"
+  ],
+  "EDR": [
+    "Endpoint Detection & Response"
+  ],
+  "DOTC": [
+    "Digital Ops-Tech Centre"
+  ],
+  "EN": [
+    "Enrolled Nurse"
+  ],
+  "DVT": [
+    "Deep Vein Thrombosis"
+  ],
+  "EAS": [
+    "Edmund Rice Secondary School"
+  ],
+  "EMAS": [
+    "Expressway Monitoring and Advisory System"
+  ],
+  "ESS": [
+    "Evergreen Secondary School"
+  ],
+  "FAA": [
+    "Financial Advisers Act"
+  ],
+  "FGD": [
+    "Focus Group Discussion"
+  ],
+  "FI": [
+    "Financial Institution"
+  ],
+  "FIT": [
+    "Fast-track IT"
+  ],
+  "FPS": [
+    "Frontier Primary School"
+  ],
+  "FMS": [
+    "Fairfield Methodist Secondary School"
+  ],
+  "FJR": [
+    "Full-time Judicial Registrar"
+  ],
+  "FRU": [
+    "Foreign Representation Unit"
+  ],
+  "FS": [
+    "Financial Services"
+  ],
+  "FYJC": [
+    "Full-time Junior College"
+  ],
+  "FLPS": [
+    "Fuchun Primary School"
+  ],
+  "G.N.": [
+    "Gazette Notification (legal citation)"
+  ],
+  "GCB": [
+    "Good Class Bungalow"
+  ],
+  "GCL": [
+    "Global Cyber Law"
+  ],
+  "GL": [
+    "Government Land"
+  ],
+  "GIA": [
+    "Government Innovation Alliance"
+  ],
+  "GCE 'A' Level": [
+    "General Certificate of Education Advanced Level"
+  ],
+  "GCE 'O' Level": [
+    "General Certificate of Education Ordinary Level"
+  ],
+  "GCE 'N' Level": [
+    "General Certificate of Education Normal Level"
+  ],
+  "GFCE": [
+    "Global Forum on Cyber Expertise"
+  ],
+  "LAF": [
+    "Land Acquisition Fund"
+  ],
+  "LCA": [
+    "Local Currency Assets"
+  ],
+  "LCS": [
+    "Light Combat System"
+  ],
+  "LIA": [
+    "Life Insurance Association"
+  ],
+  "LDP": [
+    "Leadership Development Programme"
+  ],
+  "LCR": [
+    "Liquidity Coverage Ratio"
+  ],
+  "MAJ": [
+    "Major"
+  ],
+  "LHS": [
+    "Loyang High School"
+  ],
+  "MDM": [
+    "Multi-Disciplinary Meeting"
+  ],
+  "LKYSPP": [
+    "Lee Kuan Yew School of Public Policy"
+  ],
+  "MRC": [],
+  "MLJ": [
+    "Malayan Law Journal"
+  ],
+  "MSW": [
+    "medical social worker"
+  ],
+  "NAC": [
+    "National Arts Council"
+  ],
+  "NA": [
+    "Nursing Aid"
+  ],
+  "MPH": [
+    "Multi-Purpose Hall"
+  ],
+  "NEC": [
+    "National E-Commerce"
+  ],
+  "NIH": [],
+  "NES": [
+    "National Environment Agency"
+  ],
+  "NDF": [
+    "National Drug Formulary"
+  ],
+  "NIL": [
+    "National Inter-College"
+  ],
+  "NH": [
+    "Nursing home"
+  ],
+  "NIS": [
+    "National Inter-School"
+  ],
+  "NITEC": [
+    "National ITE Certificate"
+  ],
+  "NOK": [
+    "Next of Kin"
+  ],
+  "NSA": [
+    "National Sports Association"
+  ],
+  "NPS": [
+    "Northland Primary School"
+  ],
+  "NAMS": [
+    "Ngee Ann Primary School",
+    "National Addictions Management Service (hospital service cluster under IMH/MOH)"
+  ],
+  "OJT": [
+    "On-the-Job Training"
+  ],
+  "PNR": [],
+  "OPERA": [
+    "Operational Risk Management"
+  ],
+  "OTC": [
+    "Over-The-Counter"
+  ],
+  "PM": [
+    "Prime Minister"
+  ],
+  "PDPA": [
+    "Personal Data Protection Act"
+  ],
+  "OT": [
+    "Occupational Therapy"
+  ],
+  "PV": [
+    "Paya Lebar"
+  ],
+  "PPS": [
+    "Pasir Ris Primary School"
+  ],
+  "PTA": [
+    "Parent-Teacher Association"
+  ],
+  "PRC": [
+    "People's Republic of China"
+  ],
+  "RCE": [
+    "Regional Centre of Excellence"
+  ],
+  "Raffles JC": [
+    "Raffles Junior College"
+  ],
+  "RCM": [
+    "Regional function under MOH"
+  ],
+  "Rev. Ed.": [
+    "Revised Edition (legal citation)"
+  ],
+  "RN": [
+    "registered nurse"
+  ],
+  "RM": [
+    "Rochor MRT"
+  ],
+  "ROD": [
+    "Run Out Date"
+  ],
+  "SBS Transit": [],
+  "SCCA": [
+    "Singapore Cancer Society"
+  ],
+  "SAFRC": [
+    "Singapore Armed Forces Reserve Command"
+  ],
+  "SAFVC": [
+    "Singapore Armed Forces Volunteer Corps"
+  ],
+  "SCC": [
+    "Singapore Chinese Chamber of Commerce"
+  ],
+  "SCF": [
+    "Singapore Community Foundation"
+  ],
+  "SBC": [
+    "Singapore Broadcasting Corporation (now MediaCorp)"
+  ],
+  "SDIC": [
+    "Singapore Deposit Insurance Corporation"
+  ],
+  "SGCA": [
+    "Singapore Court of Appeal"
+  ],
+  "SF(A)A": [
+    "Securities and Futures (Amendment) Act"
+  ],
+  "SGInnovate": [
+    "Singapore Innovate"
+  ],
+  "SGHC": [
+    "Singapore High Court"
+  ],
+  "SGX-ST": [
+    "SGX"
+  ],
+  "SGX RegCo": [
+    "Singapore Exchange (Regulation Division)"
+  ],
+  "SIAC": [
+    "Singapore International Arbitration Centre"
+  ],
+  "SISTIC": [
+    "Singapore Ticketing"
+  ],
+  "SIL": [
+    "Singapore Institute of Legal Education"
+  ],
+  "SIEM": [
+    "Security Information and Event Management"
+  ],
+  "SIBOR": [
+    "Singapore Interbank Offered Rate"
+  ],
+  "SLR": [
+    "Singapore Law Reports"
+  ],
+  "SLR(R)": [
+    "Singapore Law Reports (legal citation)"
+  ],
+  "SOR": [
+    "Swap Offer Rate"
+  ],
+  "SNA": [
+    "Singapore Nursing Board"
+  ],
+  "SNEC": [
+    "Singapore National Eye Centre"
+  ],
+  "SMART": [
+    "Singapore-MIT Alliance for Research and Technology"
+  ],
+  "SRE": [
+    "Site Reliability Engineering "
+  ],
+  "SRT": [],
+  "SRC": [
+    "Singapore Recreation Club"
+  ],
+  "SRN": [
+    "State Registered Nurse",
+    "Singapore Resilience Network"
+  ],
+  "SCCM": [
+    "You can refer to https://www.moh.gov.sg/docs/librariesprovider5/corporate/2021όλ文字-press-release-/pr2021-09-01d-financial-assistance-scheme-launch expire%20in%204%20years.pdf."
+  ],
+  "SRMC": [
+    "Singapore Red Cross Society"
+  ],
+  "SUB": [],
+  "ST Engineering": [
+    "ST Engineering"
+  ],
+  "STA": [
+    "Singapore Technologies Aerospace"
+  ],
+  "SSIC": [
+    "Singapore Standard Industrial Classification"
+  ],
+  "SSTL": [
+    "Singapore Space Technology Limited"
+  ],
+  "TKK": [
+    "Tuas South"
+  ],
+  "TRA": [
+    "Travel and Recreation Association"
+  ],
+  "WDA": [],
+  "SSFS": [
+    "Singapore Fintech Festival x Singapore Week of Innovation & Technology"
+  ],
+  "VPN": [
+    "Virtual Private Network"
+  ],
+  "VM": [
+    "Volunteer Manager"
+  ],
+  "ZRC": [
+    "Zion Road Cemetery"
+  ],
+  "FDW": [
+    "Foreign Domestic Worker"
+  ],
+  "ZTNA": [
+    "Zero trust network access"
+  ],
+  "MINLAW": [
+    "Ministry of Law"
+  ],
+  "DTF": [
+    "Din Tai Fung"
+  ],
+  "CPT": [
+    "Captain"
+  ],
+  "GIRO": [
+    "General interbank recurring order"
+  ],
+  "KKH": [
+    "Kandang Kerbau Hospital"
+  ],
+  "Sabo": [
+    "To sabotage; to prank"
+  ],
+  "P1-P6": [
+    "Primary 1 to Primary 6"
+  ],
+  "LTC": [
+    "Lieutenant Colonel",
+    "Long-Term Care"
+  ],
+  "OIC": [
+    "Officer-in-Charge"
+  ],
+  "Chope": [
+    "Reserve a seat with tissue paper"
+  ],
+  "OTOT": [
+    "Own Time Own Target"
+  ],
+  "Chiong": [
+    "go all out"
+  ],
+  "5 C’s": [
+    "Cash",
+    "Country Club",
+    "Car",
+    "Condo",
+    "Credit Card"
+  ],
+  "BOA": [
+    "Board of Architects"
+  ],
+  "Buay tahan": [
+    "Cannot take it; cannot stand it"
+  ],
+  "Kena arrowed": [
+    "to be assigned a task involuntarily"
+  ],
+  "BMTC": [
+    "Basic Military Training Centre (under SAF/MINDEF)"
+  ],
+  "AHPETC": [
+    "Aljunied-Hougang-Punggol East Town Council"
+  ],
+  "CMI": [],
+  "CFE": [
+    "Committee on the Future Economy"
+  ],
+  "DOS": [
+    "Department of Statistics"
+  ],
+  "CCS": [
+    "Climate Change Secretariat (PMO)",
+    "Consumer Credit Score"
+  ],
+  "CRA": [
+    "Casino Regulatory Authority"
+  ],
+  "GDP": [
+    "Gross Domestic Product"
+  ],
+  "CSG": [
+    "Career Support Group (Under Workforce Singapore, employment support)"
+  ],
+  "ERSS": [
+    "Employment and Re-employment Standards System"
+  ],
+  "FSSG": [
+    "Financial Sector SkillsFuture"
+  ],
+  "FSC": [
+    "Family Service Centre (under MSF)"
+  ],
+  "NAF": [
+    "National Arts Fund"
+  ],
+  "GovTech": [
+    "Government Technology Agency"
+  ],
+  "NACLI": [
+    "National Community Leadership Institute"
+  ],
+  "HEAL": [
+    "Healthier SG Allied Older Persons Network"
+  ],
+  "NPTD": [
+    "National Population and Talent Division (under PMO)"
+  ],
+  "NDC": [
+    "National Dental Centre (health institution under MOH cluster)"
+  ],
+  "POLWEL": [
+    "Police Welfare Division"
+  ],
+  "PST": [
+    "Public Service Transformation"
+  ],
+  "PTC": [
+    "Public Transport Council"
+  ],
+  "PEB": [
+    "Professional Engineers Board Singapore (statutory board under MND)"
+  ],
+  "SSI": [
+    "Social Service Institute"
+  ],
+  "SSA": [
+    "Social Services Agency",
+    "Social Service Award"
+  ],
+  "NYC": [
+    "National Youth Council (statutory board under MCCY)"
+  ],
+  "YIP": [
+    "Youth Internship Programme"
+  ],
+  "Merdeka Generation": [
+    "National generational benefit package"
+  ],
+  "Silver Support Scheme": [
+    "Silver Support Scheme"
+  ],
+  "CARE": [
+    "Care and resilience tag used in subsidies"
+  ],
+  "YEP": [
+    "Youth Expedition Project (scheme under NYC/MCCY)"
+  ],
+  "Pioneer Generation": [
+    "National generational benefit package policy"
+  ],
+  "OTP": [
+    "Overseas Talent Programme (talent programme under EDB/MTI)",
+    "One-Time Password (infocomm and financial services authentication, used in GovTech/IMDA initiatives)"
+  ],
+  "SkillsFuture": [
+    "SkillFuture"
+  ],
+  "CPF LIFE": [
+    "Central Provident Fund Lifetime Income for the Elderly (retirement income plan under CPF Board)"
+  ],
+  "ASEAN": [
+    "Association of Southeast Asian Nations"
+  ],
+  "CPFIS": [
+    "Central Provident Fund Investment Scheme"
+  ],
+  "CPF Medisave": [
+    "Medisave Account under CPF"
+  ],
+  "CAR": [
+    "Clean Air Regulations (environmental regulations under NEA)"
+  ],
+  "CSOC": [
+    "Cyber Security Operations Centre"
+  ],
+  "CDC Vouchers": [
+    "Community Development Council vouchers (cost-of-living support scheme managed by CDCs/PA)"
+  ],
+  "EIPIC": [
+    "Early Intervention Programme for Infants & Children"
+  ],
+  "DPSC": [
+    "Disaster Planning and Safety Committee (civil defence, SCDF/MHA)"
+  ],
+  "EDG": [
+    "Enterprise Development Grant (business support under ESG/MTI)"
+  ],
+  "EMP": [
+    "Employee Medical Plan"
+  ],
+  "ELS": [
+    "Enhanced Learning Support (MOE/ECDA education initiative)"
+  ],
+  "FWS": [
+    "Flexible Work Arrangements (work-life policy under MOM)"
+  ],
+  "ICCS": [
+    "International Criminal Court Secretariat"
+  ],
+  "HWI": [
+    "High-Worth Individual (tax, MOF/IRAS context)"
+  ],
+  "GST Voucher": [
+    "Goods and Services Tax Voucher (cost-of-living support, MOF/IRAS)"
+  ],
+  "LSC": [
+    "Leadership in Schools Committee"
+  ],
+  "PAI": [
+    "Public Assistance Index"
+  ],
+  "ITAP": [
+    "Industrial Transformation Asia-Pacific (trade exhibition, supported by agencies under MTI)"
+  ],
+  "NCPG": [
+    "National Council on Problem Gambling"
+  ],
+  "LEAP": [
+    "Learning for Employees Advancement Programme (workforce upskilling, WSG)"
+  ],
+  "QRIS": [
+    "Quick Response Code Indonesian Standard"
+  ],
+  "MSO": [
+    "Municipal Services Office (inter-agency unit under MND for issue resolution)"
+  ],
+  "MyInfo": [
+    "Personal data platform (GovTech/smart nation initiative for 'single view' of citizen data)"
+  ],
+  "SHN": [
+    "Stay-Home Notice"
+  ],
+  "RIE2025": [
+    "Research Innovation Enterprise Plan 2025"
+  ],
+  "Toa Payoh": [],
+  "SkillsFuture Credit": [
+    "Training subsidy for lifelong learning"
+  ],
+  "STAT Board": [
+    "Statutory board"
+  ],
+  "SMEC": [
+    "Singapore Malay Chamber of Commerce and Industry"
+  ],
+  "UTAP": [
+    "Union Training Assistance Programme"
+  ],
+  "YDF": [
+    "Youth Development Fund"
+  ],
+  "YFC": [
+    "Youth for Causes"
+  ],
+  "SG Enable": [
+    "Agency Championing Disability Inclusion (under MSF, works with various ministries/statutory boards)"
+  ],
+  "SSS": [
+    "Singapore Student Symposium (Education event under MOE, polytechnics, universities, and SSG)"
+  ],
+  "URA Master Plan": [
+    "Urban Redevelopment Authority's long term land use plan"
+  ],
+  "ZAP": [
+    "Zonal Approach Programme (community safety, SPF/MHA initiative)"
+  ],
+  "WOG": [
+    "Whole-Of-Government (inter-agency/cross-ministry, PMO/PSD term)"
+  ]
+}
