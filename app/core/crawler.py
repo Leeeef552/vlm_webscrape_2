@@ -34,6 +34,15 @@ class Crawler:
                         logger.warning("Skipping malformed JSON line in master file.")
 
     def _make_searx_request(self, query: str, page: int = 1) -> list[dict]:
+        if not query or not query.strip():
+            logger.warning("Empty query supplied to SearXNG request.")
+            return []
+
+        # Ensure correct endpoint (some instances expect /search)
+        url = self.searx_url
+        if not url.rstrip("/").endswith("/search"):
+            url = url.rstrip("/") + "/search"
+
         params = {
             "q": query,
             "format": "json",
@@ -42,14 +51,37 @@ class Crawler:
             "pageno": page,
             "time_range": self.crawler_config.time_range,
         }
+
+        logger.debug("SearXNG request: %s params: %s", url, params)
         try:
-            resp = requests.get(self.searx_url, params=params,
-                                timeout=self.crawler_config.timeout)
+            resp = requests.get(url, params=params, timeout=self.crawler_config.timeout)
             resp.raise_for_status()
-            return resp.json().get("results", [])
         except requests.RequestException as e:
-            logger.error(f"SearX request failed: {e}")
+            logger.error("SearX request failed (network/HTTP): %s", e)
             return []
+
+        # Try to parse JSON
+        try:
+            data = resp.json()
+        except ValueError:
+            logger.error("Failed to decode JSON from SearXNG. Response text: %s", resp.text[:1000])
+            return []
+
+        # Sanity-check structure
+        if "results" not in data:
+            logger.warning("'results' key missing in SearXNG response. Full response: %s", data)
+            return []
+
+        results = data["results"]
+        if not results:
+            logger.info(
+                "Empty results for query=%r page=%d. Response snippet: %s",
+                query,
+                page,
+                json.dumps(data)[:1000],
+            )
+        return results
+
 
     def _make_run_filename(self, prefix: str) -> str:
         ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")

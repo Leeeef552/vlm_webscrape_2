@@ -16,7 +16,7 @@
   "topic_extractor": {
     "data_file": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data",
     "gliner_model_name": "gliner-community/gliner_large-v2.5",
-    "gliner_threshold": 0.75,
+    "gliner_threshold": 0.85,
     "gliner_labels_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_entity_labels.jsonl",
     "concurrency": 4,
     "output_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities/extracted_entities.json"

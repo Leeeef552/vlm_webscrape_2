@@ -22,6 +22,32 @@ except LookupError:
 
 STOP_WORDS: Set[str] = set(stopwords.words('english'))
 
+# --- single helper function for Singapore filtering ---
+_SG_VARIANTS = ["singapore", "singaporean", "s'pore"]
+_SG_REGEX = re.compile(
+    r"\b(?:" + "|".join(re.escape(v) for v in _SG_VARIANTS + ["sg"]) + r")\b",
+    flags=re.IGNORECASE,
+)
+
+def mentions_singapore(text: str, fuzzy_threshold: int = 90) -> bool:
+    """
+    Returns True if the text contains a mention of Singapore (exact/variant or fuzzy match).
+    'sg' is only matched via exact/regex; fuzzy matching applies to longer variants to avoid noise.
+    """
+    if not text:
+        return False
+    if _SG_REGEX.search(text):
+        return True  # quick accept on exact variant or 'sg'
+
+    # fallback: per-word fuzzy matching against canonical variants (exclude 'sg' here)
+    words = set(re.findall(r"[A-Za-z']+", text.lower()))
+    for word in words:
+        for variant in _SG_VARIANTS:
+            if fuzz.ratio(word, variant) >= fuzzy_threshold:
+                return True
+    return False
+# ----------------------------------------------------
+
 class HashableDict(dict):
     def __hash__(self):
         return hash(tuple(sorted(self.items())))
@@ -52,19 +78,32 @@ class TopicExtractor:
         self,
         max_words: int = 200,
         overlap_words: int = 5,
-        fuzzy_threshold: int = 90
+        fuzzy_threshold: int = 90,
     ) -> Dict[str, Any]:
         raw_by_label: Dict[str, List[str]] = {}
         files = list(self.data_file.glob('*.json')) if self.data_file.is_dir() else [self.data_file]
         logger.info("Processing %d file(s) for extraction", len(files))
+
         for filepath in tqdm(files, desc="Files processed"):
             logger.info("Processing file: %s", filepath)
             try:
                 with filepath.open(encoding='utf-8') as f:
                     data = json.load(f)
                 entries = data if isinstance(data, list) else [data]
+
+                # --- filtering step: skip file if none of its entries mention Singapore ---
+                if not any(
+                    mentions_singapore(str(entry.get("text_content", "") or ""), fuzzy_threshold)
+                    for entry in entries
+                ):
+                    logger.info("Skipping %s because it contains no Singapore signal", filepath)
+                    continue
+
                 for entry in tqdm(entries, desc="Entries", leave=False):
                     text = entry.get('text_content', '')
+                    if not mentions_singapore(text, fuzzy_threshold):
+                        continue  # skip entry early
+
                     cleaned = self._clean_text(text)
                     if len(cleaned) < 10:
                         continue
