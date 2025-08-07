@@ -1,72 +1,19 @@
 {"label":"ADDRESS","description":"Street or mailing addresses in Singapore, e.g., 1 North Bridge Road, 80 Marine Parade Road."}
-{"label":"EVENT.PUBLIC_HOLIDAY","description":"National and public holidays observed in Singapore, e.g., Chinese New Year, National Day."}
-{"label":"FACILITY.HAWKER_CENTRE","description":"Open-air food courts selling local dishes in Singapore, e.g., Lau Pa Sat, Maxwell Food Centre."}
-{"label":"FACILITY.COMMUNITY_CLUB","description":"Local community centers offering recreational activities and classes in Singapore, e.g., Bishan Community Club, Tampines West Community Club."}
-{"label":"FACILITY.SERVICE_CENTRE.GOVERNMENT","description":"Government-run service centers providing public services in Singapore, e.g., CPF Service Centre, HDB Branch Office."}
-{"label":"FACILITY.FITNESS_CENTRE","description":"Public or private gyms and fitness facilities in Singapore, e.g., ActiveSG Gym at Yio Chu Kang, Virgin Active Fitness Club."}
-{"label":"BUILDING.RESIDENTIAL.HDB_BLOCK","description":"Public housing blocks managed by HDB in Singapore, e.g., Block 123 Tampines Street 11, Block 45 Toa Payoh HDB."}
-{"label":"BUILDING.RESIDENTIAL.HDB_MIXED_USE","description":"HDB developments combining residential and commercial units in Singapore, e.g., Punggol Edge, SkyTerrace @ Dawson."}
-{"label":"BUILDING.RESIDENTIAL.CONDO","description":"Privately-owned condominium complexes in Singapore, e.g., The Interlace, Marina Bay Residences."}
-{"label":"BUILDING.RESIDENTIAL.LANDED_ESTATE","description":"Privately owned landed properties like terrace houses and bungalows in Singapore, e.g., Serangoon Garden Terrace, Bukit Timah bungalow."}
-{"label":"BUILDING.COMMERCIAL.OFFICE_TOWER","description":"High-rise office buildings in Singapore, e.g., One Raffles Place, CapitaGreen."}
-{"label":"BUILDING.COMMERCIAL.RETAIL_MALL","description":"Shopping centers and malls in Singapore, e.g., VivoCity, Ion Orchard."}
-{"label":"BUILDING.COMMERCIAL.BUSINESS_PARK","description":"Mixed-use developments with offices and amenities in Singapore, e.g., one-north, Changi Business Park."}
-{"label":"BUILDING.INDUSTRIAL.JTC_FACTORY","description":"Industrial facilities managed by JTC Corporation in Singapore, e.g., JTC Tuas View, CleanTech Park."}
-{"label":"BUILDING.INSTITUTIONAL.SCHOOL","description":"Educational institutions including primary and secondary schools in Singapore, e.g., Raffles Institution, Nanyang Primary School."}
-{"label":"BUILDING.INSTITUTIONAL.HOSPITAL","description":"Medical centers and hospitals in Singapore, e.g., Singapore General Hospital, KK Women's and Children's Hospital."}
-{"label":"BUILDING.INSTITUTIONAL.GOVERNMENT","description":"Government-owned buildings and offices in Singapore, e.g., Parliament House, Istana."}
-{"label":"TRANSPORT.MRT_STATION","description":"Mass Rapid Transit stations in Singapore, e.g., Dhoby Ghaut, Orchard Station."}
-{"label":"TRANSPORT.LRT_STATION","description":"Light Rail Transit stations in Singapore, e.g., Punggol LRT, Sengkang LRT."}
-{"label":"TRANSPORT.BUS_STOP","description":"Public bus stops in Singapore with official bus stop codes, e.g., 81149 Orchard Road, 48011 Ang Mo Kio."}
-{"label":"TRANSPORT.ROAD.EXPRESSWAY","description":"Major highways and expressways in Singapore, e.g., Pan Island Expressway (PIE), East Coast Parkway (ECP)."}
-{"label":"TRANSPORT.ROAD.LOCAL_STREET","description":"Local roads and streets in Singapore, e.g., Bukit Timah Road, East Coast Road."}
-{"label":"TRANSPORT.AIRPORT","description":"Air transport terminals in Singapore, e.g., Singapore Changi Airport, Seletar Airport."}
-{"label":"TRANSPORT.FERRY_TERMINAL","description":"Marine ferry terminals in Singapore, e.g., Tanah Merah Ferry Terminal, Marina South Pier."}
-{"label":"EDU.PRESCHOOL","description":"Early childhood education centers in Singapore, e.g., My First Skool, PCF Sparkletots."}
-{"label":"EDU.SCHOOL.PRIMARY","description":"Government and aided primary schools in Singapore, e.g., Raffles Girls' Primary School, Tao Nan School."}
-{"label":"EDU.SCHOOL.SECONDARY","description":"Secondary schools in Singapore, e.g., Hwa Chong Institution, Dunman High School."}
-{"label":"EDU.SCHOOL.JUNIOR_COLLEGE","description":"Junior colleges in Singapore offering pre-university education, e.g., Victoria Junior College, Anderson Junior College."}
-{"label":"EDU.SCHOOL.POLYTECHNIC","description":"Polytechnic institutes in Singapore, e.g., Ngee Ann Polytechnic, Singapore Polytechnic."}
-{"label":"EDU.SCHOOL.UNIVERSITY","description":"Universities and higher education institutions in Singapore, e.g., National University of Singapore (NUS), Nanyang Technological University (NTU)."}
-{"label":"EDU.INSTITUTE.PRIVATE","description":"Private tertiary institutions in Singapore, e.g., James Cook University Singapore, MDIS."}
-{"label":"HEALTH.POLYCLINIC","description":"Government-run healthcare clinics in Singapore, e.g., Ang Mo Kio Polyclinic, Bukit Batok Polyclinic."}
-{"label":"ORG.GOVERNMENT_AGENCY.MINISTRY","description":"Singapore government ministries, e.g., Ministry of Education, Ministry of Health."}
-{"label":"ORG.GOVERNMENT_AGENCY.QUASI_GOV","description":"Statutory boards under Singapore ministries, e.g., National Parks Board (NParks), Housing & Development Board (HDB)."}
-{"label":"ORG.STATUTORY_BOARD","description":"Autonomous government organizations in Singapore, e.g., Land Transport Authority (LTA), Economic Development Board (EDB)."}
-{"label":"ORG.POLITICAL_PARTY","description":"Political parties in Singapore, e.g., People's Action Party (PAP), Workers' Party (WP)."}
-{"label":"ORG.RESIDENTS_ASSOCIATION.TOWN_COUNCIL","description":"Town Councils in Singapore managing public housing estates, e.g., Tanjong Pagar Town Council, Ang Mo Kio Town Council."}
-{"label":"ORG.COMPANY.CONSTRUCTION","description":"Construction and engineering firms in Singapore, e.g., Woh Hup, McConnell Dowell."}
-{"label":"ORG.COMPANY.RETAIL_SUPERMARKET","description":"Supermarket chains in Singapore, e.g., NTUC FairPrice, Cold Storage."}
-{"label":"ORG.COMPANY.FINANCIAL_SERVICES","description":"Banks and financial institutions in Singapore, e.g., DBS Bank, OCBC Bank."}
-{"label":"ORG.COMPANY.MARITIME","description":"Shipping and port operators in Singapore, e.g., PSA International, APL."}
-{"label":"ORG.VWO_NPO","description":"Voluntary welfare and nonprofit organizations in Singapore, e.g., Singapore Red Cross, Mendaki."}
-{"label":"CULTURE.NATIONAL_MONUMENT","description":"Officially gazetted national monuments in Singapore, e.g., Singapore Botanic Gardens, Civilian War Memorial."}
-{"label":"CULTURE.MUSEUM_HERITAGE_CENTRE","description":"Museums and heritage institutions in Singapore, e.g., National Museum of Singapore, Asian Civilisations Museum."}
-{"label":"CULTURE.RELIGIOUS_SITE","description":"Places of worship in Singapore, e.g., Sultan Mosque, Buddha Tooth Relic Temple."}
-{"label":"CULTURE.TOURIST_ATTRACTION","description":"Tourist attractions and landmarks in Singapore, e.g., Gardens by the Bay, Sentosa."}
-{"label":"CULTURE.CUISINE","description":"Traditional and popular dishes originating from or commonly associated with Singaporean cuisine, e.g., Hainanese Chicken Rice, Laksa, Roti Prata."}
-{"label":"NATURE.PARK","description":"Public parks and green spaces in Singapore, e.g., East Coast Park, MacRitchie Reservoir Park."}
-{"label":"NATURE.RESERVOIR","description":"Water catchment reservoirs in Singapore, e.g., Upper Seletar Reservoir, MacRitchie Reservoir."}
-{"label":"NATURE.HERITAGE_TREE","description":"Protected heritage trees in Singapore, e.g., Tembusu tree at NParks, Sengkuang Banyan."}
-{"label":"NATURE.GREEN_CORRIDOR","description":"Linear parks along former rail corridors in Singapore, e.g., Bukit Timah Railway Green Corridor."}
-{"label":"LAND.LAND_USE_PARCEL.RESIDENTIAL","description":"Designated residential land parcels in Singapore, e.g., Tengah, Punggol."}
-{"label":"LAND.LAND_USE_PARCEL.COMMERCIAL","description":"Commercial zoned land parcels in Singapore, e.g., Marina Bay Financial Centre."}
-{"label":"LAND.LAND_USE_PARCEL.INDUSTRIAL","description":"Industrial land parcels managed by JTC in Singapore, e.g., Jurong Island."}
-{"label":"LAND.LAND_USE_PARCEL.GREENSPACE","description":"Parcels designated for parks and greenery in Singapore, e.g., Bishan-Ang Mo Kio Park."}
-{"label":"LAND.LAND_USE_PARCEL.UTILITY","description":"Land used for utility infrastructure in Singapore, e.g., Changi Water Reclamation Plant."}
-{"label":"SUBSTANCE.NARCOTICS","description":"Illegal narcotic drugs controlled under Singapore law, e.g., heroin, cocaine."}
-{"label":"SUBSTANCE.PSYCHOACTIVE_SUBSTANCES","description":"Regulated psychoactive substances under Singapore law, e.g., cannabis, ecstasy."}
-{"label":"PEOPLE.GOV","description":"Elected government officials in Singapore, e.g., Prime Minister Lee Hsien Loong, Deputy Prime Minister Heng Swee Keat."}
-{"label":"PEOPLE.NATREP","description":"Singapore's national representatives abroad, e.g., Ambassador Chan Heng Chee, High Commissioner Simon Wong."}
-{"label":"PEOPLE.PUBLIC","description":"Public figures and citizens in Singapore mentioned by name."}
-{"label":"POLICY.HOUSING","description":"National housing policies and initiatives in Singapore, e.g., Build-To-Order (BTO) scheme, Lease Buyback Scheme."}
-{"label":"POLICY.HEALTHCARE","description":"Healthcare-related policies and initiatives in Singapore, e.g., MediShield Life, Community Health Assist Scheme (CHAS)."}
-{"label":"POLICY.EDUCATION","description":"Government educational policies and initiatives in Singapore, e.g., SkillsFuture, Edusave Scheme."}
-{"label":"POLICY.TRANSPORT","description":"Transport-related initiatives and national policies in Singapore, e.g., Car-lite Initiative, Certificate of Entitlement (COE)."}
-{"label":"POLICY.ENVIRONMENTAL","description":"Environmental and sustainability initiatives and policies in Singapore, e.g., Green Plan 2030, Zero Waste Masterplan."}
-{"label":"POLICY.DIGITAL_GOVERNMENT","description":"Government digital transformation initiatives in Singapore, e.g., Smart Nation Initiative, National Digital Identity (SingPass)."}
-{"label":"POLICY.SOCIAL_SUPPORT","description":"Social welfare and support schemes in Singapore, e.g., ComCare Assistance, Pioneer Generation Package."}
-{"label":"POLICY.ECONOMIC_DEVELOPMENT","description":"Initiatives aimed at economic growth and development in Singapore, e.g., Industry Transformation Maps (ITMs), Productivity Solutions Grant (PSG)."}
-{"label":"POLICY.FAMILY","description":"Family-focused government policies and schemes in Singapore, e.g., Baby Bonus Scheme, Enhanced Marriage and Parenthood Package."}
-{"label":"POLICY.SECURITY_DEFENCE","description":"National security and defence policies and initiatives in Singapore, e.g., Total Defence, National Service (NS)."}
-{"label": "MISC", "description":"miscellaneous"}
+{"label":"EVENT","description":"Named events or occasions in Singapore, including national and public holidays such as Chinese New Year and National Day."}
+{"label":"FACILITY","description":"Public or private facilities in Singapore, e.g., hawker centres like Lau Pa Sat; community clubs like Bishan Community Club; government service centres like CPF Service Centre; fitness centres like ActiveSG Gym."}
+{"label":"BUILDING","description":"Building structures in Singapore, e.g., HDB residential blocks like Block 123 Tampines Street 11; mixed-use HDB developments like Punggol Edge; condominiums like The Interlace; landed estates like Serangoon Garden Terrace; office towers like One Raffles Place; retail malls like VivoCity; business parks like one-north; JTC factories like CleanTech Park; institutional buildings such as Raffles Institution, Singapore General Hospital, or Parliament House."}
+{"label":"TRANSPORT","description":"Transport facilities and services in Singapore, e.g., MRT stations like Dhoby Ghaut; LRT stations like Punggol LRT; bus stops with codes (e.g., 81149 Orchard Road); expressways like the Pan Island Expressway; local streets like Bukit Timah Road; airports like Singapore Changi Airport; ferry terminals like Tanah Merah Ferry Terminal."}
+{"label":"EDUCATION","description":"Educational institutions in Singapore, from preschools like My First Skool to primary schools like Raffles Girls’ Primary School; secondary schools like Hwa Chong Institution; junior colleges like Victoria Junior College; polytechnics like Ngee Ann Polytechnic; universities like the National University of Singapore; private tertiary institutions like James Cook University Singapore."}
+{"label":"HEALTH","description":"Healthcare institutions and services in Singapore, e.g., government polyclinics like Ang Mo Kio Polyclinic; hospitals like KK Women’s and Children’s Hospital."}
+{"label":"ORGANIZATION","description":"Organizations, companies, or institutions in Singapore, e.g., ministries like the Ministry of Education; statutory boards like NParks; political parties like the People’s Action Party; town councils like Ang Mo Kio Town Council; construction firms like Woh Hup; supermarket chains like NTUC FairPrice; banks like DBS Bank; maritime operators like PSA International; nonprofit organizations like Singapore Red Cross."}
+{"label":"CULTURE","description":"Cultural sites, institutions, or elements in Singapore, e.g., national monuments like the Singapore Botanic Gardens; museums like the National Museum of Singapore; religious sites like Sultan Mosque; tourist attractions like Gardens by the Bay; local cuisines like Hainanese Chicken Rice."}
+{"label":"NATURE","description":"Natural features and green spaces in Singapore, e.g., parks like East Coast Park; reservoirs like MacRitchie Reservoir; heritage trees like the NParks Tembusu; green corridors like the Bukit Timah Railway Green Corridor."}
+{"label":"LAND_USE","description":"Designated land parcel usage in Singapore, e.g., residential areas like Tengah; commercial zones like Marina Bay Financial Centre; industrial areas like Jurong Island; greenspaces like Bishan-Ang Mo Kio Park; utility sites like Changi Water Reclamation Plant."}
+{"label":"PEOPLE","description":"Named individuals or public figures in Singapore, including government officials like Prime Minister Lee Hsien Loong; national representatives like Ambassador Chan Heng Chee; and other public figures."}
+{"label":"POLICY","description":"Government policies, schemes, or initiatives in Singapore, e.g., Build-To-Order housing; MediShield Life healthcare; SkillsFuture education; Certificate of Entitlement transport; Green Plan 2030 environmental; Smart Nation digital government; ComCare social support; Industry Transformation Maps economic development; Baby Bonus family; Total Defence security."}
+{"label":"SUBSTANCE","description":"Controlled or regulated substances under Singapore law, e.g., illegal narcotics like heroin and cocaine; psychoactive substances like cannabis and ecstasy."}
+{"label":"ADMINISTRATIVE_DIVISION","description":"Administrative divisions in Singapore, such as planning areas or constituencies, e.g., Ang Mo Kio, Marine Parade GRC."}
+{"label":"INFRASTRUCTURE","description":"Infrastructure systems in Singapore, e.g., the MRT network; expressways like the East Coast Parkway."}
+{"label":"RETAIL","description":"Retail establishments in Singapore, e.g., shopping malls like Ion Orchard; supermarkets like Cold Storage."}
+{"label":"ENTERTAINMENT","description":"Entertainment venues in Singapore, e.g., cinemas like Shaw Theatres; theatres and concert halls like the Esplanade; stadiums like the National Stadium."}
+{"label":"MISC","description":"Miscellaneous items not covered by other labels."}
