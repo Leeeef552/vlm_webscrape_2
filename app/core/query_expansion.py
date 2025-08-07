@@ -26,9 +26,9 @@ class QueryExpansion:
 
             Instructions:
             - Take the original query provided.
-            - Generate {n} new queries that specifically deepen the subject matter.
+            - Generate {n} new queries that specifically deepen the subject matter. Expand “depth” by adding finer-grained facets (e.g. departments, programmes, policies, reports, initiatives, locations).
             - Focus exclusively on Singapore-specific context or examples.
-            - Only when relevant and logical, incorporate any of the below topics found within the below labels in the query expansion. The provided labels are entitiy classes, infer what they mean and what they refer to: {bottom_labels}
+            - Only when relevant and logical, incorporate any of the below topics found within the below labels in the query expansion. The provided labels are entity classes, infer what they mean and what they refer to: {bottom_labels}
             - Only provide the new queries, do not provide rationale or explanations 
             - Queries must **strictly** be about Singapore or must be related to Singapore 
 
@@ -48,7 +48,7 @@ class QueryExpansion:
 
             Instructions:
             - Take the original query provided.
-            - Generate {n} complementary queries that are related but differ significantly from the original query.
+            - Generate {n} complementary queries that are related but differ significantly from the original query. Explore a different but related topic (e.g. sibling dishes, parallel agencies, alternate programmes, related events).
             - Focus exclusively on Singapore-specific context or examples.
             - Only when relevant and logical, incorporate any of these subjects within the queries: {bottom_entities}
             - Only provide the new queries, do not provide rationale or explanations

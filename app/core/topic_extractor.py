@@ -14,7 +14,11 @@ from nltk.corpus import stopwords
 from rapidfuzz import fuzz
 from copy import deepcopy
 
-# Ensure NLTK stopwords are available
+
+############################
+####      Helpers     ######
+############################
+
 try:
     _ = stopwords.words('english')
 except LookupError:
@@ -22,7 +26,6 @@ except LookupError:
 
 STOP_WORDS: Set[str] = set(stopwords.words('english'))
 
-# --- single helper function for Singapore filtering ---
 _SG_VARIANTS = ["singapore", "singaporean", "s'pore"]
 _SG_REGEX = re.compile(
     r"\b(?:" + "|".join(re.escape(v) for v in _SG_VARIANTS + ["sg"]) + r")\b",
@@ -30,10 +33,6 @@ _SG_REGEX = re.compile(
 )
 
 def mentions_singapore(text: str, fuzzy_threshold: int = 90) -> bool:
-    """
-    Returns True if the text contains a mention of Singapore (exact/variant or fuzzy match).
-    'sg' is only matched via exact/regex; fuzzy matching applies to longer variants to avoid noise.
-    """
     if not text:
         return False
     if _SG_REGEX.search(text):
@@ -46,11 +45,14 @@ def mentions_singapore(text: str, fuzzy_threshold: int = 90) -> bool:
             if fuzz.ratio(word, variant) >= fuzzy_threshold:
                 return True
     return False
-# ----------------------------------------------------
 
 class HashableDict(dict):
     def __hash__(self):
         return hash(tuple(sorted(self.items())))
+    
+###############################
+####      main class     ######
+###############################
 
 class TopicExtractor:
     def __init__(self, config: TopicExtractorConfig):
@@ -74,12 +76,7 @@ class TopicExtractor:
     ##################################
     #    main extraction function    #
     ##################################
-    def extract_from_file(
-        self,
-        max_words: int = 200,
-        overlap_words: int = 5,
-        fuzzy_threshold: int = 90,
-    ) -> Dict[str, Any]:
+    def extract_from_file(self, max_words: int = 200, overlap_words: int = 5, fuzzy_threshold: int = 85) -> Dict[str, Any]:
         raw_by_label: Dict[str, List[str]] = {}
         files = list(self.data_file.glob('*.json')) if self.data_file.is_dir() else [self.data_file]
         logger.info("Processing %d file(s) for extraction", len(files))
@@ -91,7 +88,6 @@ class TopicExtractor:
                     data = json.load(f)
                 entries = data if isinstance(data, list) else [data]
 
-                # --- filtering step: skip file if none of its entries mention Singapore ---
                 if not any(
                     mentions_singapore(str(entry.get("text_content", "") or ""), fuzzy_threshold)
                     for entry in entries
@@ -104,10 +100,9 @@ class TopicExtractor:
                     if not mentions_singapore(text, fuzzy_threshold):
                         continue  # skip entry early
 
-                    cleaned = self._clean_text(text)
-                    if len(cleaned) < 10:
+                    if len(text) < 10:
                         continue
-                    chunks = self._chunk_text_for_gliner(cleaned, max_words, overlap_words)
+                    chunks = self._chunk_text_for_gliner(text, max_words, overlap_words)
                     for chunk in chunks:
                         try:
                             preds = self.model.predict_entities(chunk, self.labels, threshold=self.threshold)
@@ -213,10 +208,9 @@ class TopicExtractor:
         return merged
 
     def extract_entities(self, text: str, max_words: int = 200, overlap_words: int = 5) -> Set[str]:
-        cleaned = self._clean_text(text)
-        if len(cleaned) < 5:
+        if len(text) < 5:
             return set()
-        chunks = self._chunk_text_for_gliner(cleaned, max_words, overlap_words)
+        chunks = self._chunk_text_gliner(text, max_words, overlap_words)
         entities: Set[str] = set()
         logger.info("Extracting entities from text with %d chunks", len(chunks))
         for chunk in tqdm(chunks, desc="Entity extraction chunks"):
@@ -229,10 +223,10 @@ class TopicExtractor:
         return entities
 
     def analyze_entities(self, text: str, max_words: int = 200, overlap_words: int = 20) -> Dict[str, Any]:
-        cleaned = self._clean_text(text)
-        if len(cleaned) < 10:
+        if len(text) < 10:
             return {"total_entities": 0, "counts_by_label": {}}
-        chunks = self._chunk_text_for_gliner(cleaned, max_words, overlap_words)
+        chunks = self._chunk_text_for_gliner(text, max_words, overlap_words)
+
         all_predictions: List[Dict[str, Any]] = []
         logger.info("Analyzing entities in %d chunks", len(chunks))
         for chunk in tqdm(chunks, desc="Entity analysis chunks"):
