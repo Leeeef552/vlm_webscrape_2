@@ -12,8 +12,9 @@
 {"label":"PEOPLE","description":"Named individuals or public figures in Singapore, including government officials like Prime Minister Lee Hsien Loong; national representatives like Ambassador Chan Heng Chee; and other public figures."}
 {"label":"POLICY","description":"Government policies, schemes, or initiatives in Singapore, e.g., Build-To-Order housing; MediShield Life healthcare; SkillsFuture education; Certificate of Entitlement transport; Green Plan 2030 environmental; Smart Nation digital government; ComCare social support; Industry Transformation Maps economic development; Baby Bonus family; Total Defence security."}
 {"label":"SUBSTANCE","description":"Controlled or regulated substances under Singapore law, e.g., illegal narcotics like heroin and cocaine; psychoactive substances like cannabis and ecstasy."}
-{"label":"ADMINISTRATIVE_DIVISION","description":"Administrative divisions in Singapore, such as planning areas or constituencies, e.g., Ang Mo Kio, Marine Parade GRC."}
 {"label":"INFRASTRUCTURE","description":"Infrastructure systems in Singapore, e.g., the MRT network; expressways like the East Coast Parkway."}
 {"label":"RETAIL","description":"Retail establishments in Singapore, e.g., shopping malls like Ion Orchard; supermarkets like Cold Storage."}
 {"label":"ENTERTAINMENT","description":"Entertainment venues in Singapore, e.g., cinemas like Shaw Theatres; theatres and concert halls like the Esplanade; stadiums like the National Stadium."}
+{"label":"GOVERNMENT_AGENCY","description":"National or statutory bodies empowered to implement laws and manage public services, e.g., Land Transport Authority (LTA), National Environment Agency (NEA), Immigration & Checkpoints Authority (ICA)."}
+{"label":"LEGISLATION","description":"Enacted laws and subsidiary instruments passed by Parliament, e.g., Personal Data Protection Act 2012, Goods and Services Tax Act, Environmental Protection and Management Act."}
 {"label":"MISC","description":"Miscellaneous items not covered by other labels."}

@@ -32,19 +32,26 @@ _SG_REGEX = re.compile(
     flags=re.IGNORECASE,
 )
 
-def mentions_singapore(text: str, fuzzy_threshold: int = 90) -> bool:
+def mentions_singapore(text: str, fuzzy_threshold: int = 75) -> bool:
     if not text:
         return False
+    # Exact regex match still works on raw text
     if _SG_REGEX.search(text):
-        return True  # quick accept on exact variant or 'sg'
+        return True
 
-    # fallback: per-word fuzzy matching against canonical variants (exclude 'sg' here)
-    words = set(re.findall(r"[A-Za-z']+", text.lower()))
+    # Prepare normalized variants once
+    normalized_variants = {normalize_text(v) for v in _SG_VARIANTS}
+    # Tokenize words, then normalize
+    words = set(re.findall(r"[A-Za-z']+", text))
     for word in words:
-        for variant in _SG_VARIANTS:
-            if fuzz.ratio(word, variant) >= fuzzy_threshold:
+        word_norm = normalize_text(word)
+        for var_norm in normalized_variants:
+            if fuzz.ratio(word_norm, var_norm) >= fuzzy_threshold:
                 return True
     return False
+
+def normalize_text(s: str) -> str:
+    return re.sub(r'[^a-z0-9]', '', s.lower())
 
 class HashableDict(dict):
     def __hash__(self):
@@ -76,7 +83,7 @@ class TopicExtractor:
     ##################################
     #    main extraction function    #
     ##################################
-    def extract_from_file(self, max_words: int = 200, overlap_words: int = 5, fuzzy_threshold: int = 85) -> Dict[str, Any]:
+    def extract_from_file(self, max_words: int = 200, overlap_words: int = 5, fuzzy_threshold: int = 75) -> Dict[str, Any]:
         raw_by_label: Dict[str, List[str]] = {}
         files = list(self.data_file.glob('*.json')) if self.data_file.is_dir() else [self.data_file]
         logger.info("Processing %d file(s) for extraction", len(files))
@@ -169,9 +176,11 @@ class TopicExtractor:
         counts: List[int] = []
 
         for item in items:
+            item_norm = normalize_text(item)
             matched = False
             for idx, rep in enumerate(clusters):
-                if fuzz.ratio(item, rep) >= threshold:
+                rep_norm = normalize_text(rep)
+                if fuzz.ratio(item_norm, rep_norm) >= threshold:
                     counts[idx] += 1
                     matched = True
                     break
@@ -181,12 +190,7 @@ class TopicExtractor:
 
         return dict(zip(clusters, counts))
 
-    def _merge_fuzzy_counts(
-        self,
-        existing: Dict[str, Dict[str, int]],
-        new_counts: Dict[str, Dict[str, int]],
-        threshold: int
-    ) -> Dict[str, Dict[str, int]]:
+    def _merge_fuzzy_counts(self, existing: Dict[str, Dict[str, int]], new_counts: Dict[str, Dict[str, int]], threshold: int) -> Dict[str, Dict[str, int]]:
         merged = deepcopy(existing)
         for label, new_map in new_counts.items():
             if label not in merged:
@@ -194,9 +198,11 @@ class TopicExtractor:
                 continue
 
             for ent, cnt in new_map.items():
+                ent_norm = normalize_text(ent)
                 best_rep, best_score = None, 0
                 for rep in merged[label]:
-                    score = fuzz.ratio(ent, rep)
+                    rep_norm = normalize_text(rep)
+                    score = fuzz.ratio(ent_norm, rep_norm)
                     if score > best_score:
                         best_score, best_rep = score, rep
 
@@ -302,16 +308,6 @@ class TopicExtractor:
                 break
             start = end - overlap_words
         return chunks
-
-    @staticmethod
-    def _clean_text(text: str) -> str:
-        if not isinstance(text, str):
-            text = str(text)
-        text = re.sub(r"\s+", " ", text)
-        text = re.sub(r"[^\w\s\.,;:!?&()\-']", " ", text)
-        text = re.sub(r"\s+", " ", text).strip()
-        words = [w for w in text.split() if w.lower() not in STOP_WORDS]
-        return " ".join(words)
 
 def main() -> None:
     config = TopicExtractorConfig()
