@@ -1,11 +1,9 @@
 import re
 import json
-import logging
 import sqlite3
 from pathlib import Path
 from typing import Set, List, Dict, Any
 from collections import Counter, defaultdict
-import torch
 from tqdm import tqdm
 from gliner import GLiNER
 from ..configs.config import TopicExtractorConfig
@@ -17,42 +15,7 @@ from copy import deepcopy
 from sentence_transformers import SentenceTransformer
 from openai import OpenAI
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
-
-############################
-####      Helpers     ######
-############################
-
-try:
-    _ = stopwords.words('english')
-except LookupError:
-    nltk.download('stopwords')
-
-STOP_WORDS: Set[str] = set(stopwords.words('english'))
-
-_SG_VARIANTS = ["singapore", "singaporean", "s'pore"]
-_SG_REGEX = re.compile(
-    r"\b(?:" + "|".join(re.escape(v) for v in _SG_VARIANTS + ["sg"]) + r")\b",
-    flags=re.IGNORECASE,
-)
-
-def mentions_singapore(text: str, fuzzy_threshold: int = 75) -> bool:
-    if not text:
-        return False
-    if _SG_REGEX.search(text):
-        return True
-    normalized_variants = {normalize_text(v) for v in _SG_VARIANTS}
-    words = set(re.findall(r"[A-Za-z']+", text))
-    for word in words:
-        word_norm = normalize_text(word)
-        for var_norm in normalized_variants:
-            if fuzz.ratio(word_norm, var_norm) >= fuzzy_threshold:
-                return True
-    return False
-
-
-def normalize_text(s: str) -> str:
-    return re.sub(r'[^a-z0-9]', '', s.lower())
+from ..utils.utils import mentions_singapore, normalize_text
 
 
 class TopicExtractor:
@@ -60,27 +23,28 @@ class TopicExtractor:
         self.config = config
         self.data_file = Path(self.config.data_file)
         self.output_path_json = Path(self.config.output_path)
+
         # Expect config.sqlite_db_path for SQLite file
         self.db_path = Path(self.config.db_path) / "kb.sqlite"
 
+        # Topic extraction model GLINER configurations
         self.model = GLiNER.from_pretrained(self.config.gliner_model_name, device="cuda")
         self.embedder = SentenceTransformer(self.config.embedding_model, device="cuda")
-
         self.gliner_threshold = self.config.gliner_threshold
         self.concurrency = self.config.concurrency
 
-        # Load labels from JSONL
-        self.labels_path = Path(self.config.gliner_labels_path)
-        with self.labels_path.open(encoding="utf-8") as f:
+        # Load class labels from JSONL and load abbrev map
+        with Path(self.config.gliner_labels_path).open(encoding="utf-8") as f:
             raw_labels = [json.loads(line) for line in f]
         self.labels = self._process_labels(raw_labels)
-        logger.info(f"Loaded %d unique labels", len(self.labels))
 
-        # Load abbrev map
         with open(self.config.abbrev_map_path, encoding='utf-8') as f:
             raw_map = json.load(f)
             self.abbrev_map: Dict[str, str] = {k.lower(): v for k, v in raw_map.items()}
 
+        self.seed_entities_file = Path(self.config.seed_entities_file)
+
+        logger.info(f"Loaded %d unique labels and %d abbreviations", len(self.labels), len(self.abbrev_map))
 
         # Initialize or connect to SQLite
         self._init_db()
@@ -144,8 +108,82 @@ class TopicExtractor:
           key   TEXT PRIMARY KEY,
           value TEXT
         )""")
+
         conn.commit()
+        if self.seed_entities_file and self.seed_entities_file.exists():
+            logger.info("Loading seed entities from %s...", self.seed_entities_file)
+            try:
+                seed_data = self._load_seed_entities(self.seed_entities_file)
+                self._insert_seed_entities(c, seed_data)
+                logger.info("Seed entities loaded successfully.")
+            except Exception as e:
+                logger.error("Error loading seed entities: %s", e)
+        else:
+            logger.info("No seed entities file provided or file does not exist.")
+
         conn.close()
+
+    def _load_seed_entities(self, seed_path: Path) -> List[Dict[str, str]]:
+        """
+        Reads a JSONL file containing seed entities.
+        Each line should be a JSON object with 'entity' and 'label' keys.
+        Returns a list of dictionaries { 'entity': str, 'label': str }.
+        """
+        seed_entities = []
+        try:
+            with seed_path.open(encoding='utf-8') as f:
+                for line_num, line in enumerate(f, 1):
+                    line = line.strip()
+                    if not line:
+                        continue # Skip empty lines
+                    try:
+                        obj = json.loads(line)
+                        entity = obj.get('entity')
+                        label = obj.get('label')
+                        if entity is not None and label is not None:
+                            seed_entities.append({'entity': entity.strip(), 'label': label.strip()})
+                        else:
+                            logger.warning(f"Skipping invalid line {line_num} in seed file: {line}")
+                    except json.JSONDecodeError as je:
+                        logger.warning(f"Invalid JSON on line {line_num} in seed file: {line}. Error: {je}")
+        except Exception as e:
+            raise RuntimeError(f"Error reading seed entities file '{seed_path}': {e}")
+        return seed_entities
+
+    def _insert_seed_entities(self, cursor, seed_data: List[Dict[str, str]]) -> None:
+        """
+        Inserts seed entities into the database.
+        Assumes the database connection is open and cursor is active.
+        """
+        # First, get or create all unique labels
+        unique_labels = list(set(item['label'] for item in seed_data))
+        # Insert labels if they don't exist
+        for label in unique_labels:
+            cursor.execute("INSERT OR IGNORE INTO labels(label) VALUES(?)", (label,))
+        # Get label IDs
+        label_id_map = {}
+        for label in unique_labels:
+            cursor.execute("SELECT label_id FROM labels WHERE label=?", (label,))
+            result = cursor.fetchone()
+            if result:
+                label_id_map[label] = result[0]
+            else:
+                logger.warning(f"Label '{label}' not found after insertion.")
+
+        # Now insert entities
+        for item in seed_data:
+            entity_text = item['entity']
+            label = item['label']
+            label_id = label_id_map.get(label)
+            if label_id is None:
+                logger.warning(f"Skipping seed entity '{entity_text}' due to unknown label '{label}'")
+                continue
+
+            # Insert entity (will ignore duplicates based on unique constraint)
+            cursor.execute(
+                "INSERT OR IGNORE INTO entities(label_id, entity_text, total_count) VALUES(?,?,?)",
+                (label_id, entity_text, 1) # Default count to 1 for seed
+            )
 
 
     def _save_to_db(self, data: Dict[str, Any]) -> None:
@@ -348,24 +386,75 @@ class TopicExtractor:
     ########################################
     
     def _check_relevance(self, entity: str) -> bool:
+        # First, check if the entity matches any seed entities using fuzzy matching
+        entity_lower = entity.lower().strip()
+        
+        # Check against seed entities
+        for seed_entity in self._get_all_seed_entities():
+            if fuzz.ratio(entity_lower, seed_entity.lower()) >= 75:
+                return True
+        
+        # If no match found in seed entities, check against existing entities in DB
+        for label, entities in self._get_all_entities().items():
+            for db_entity in entities:
+                if fuzz.ratio(entity_lower, db_entity.lower()) >= 75:
+                    return True
+        
+        # Fallback to LLM if fuzzy matching doesn't find a match
         messages = [
             {"role": "system", "content": "You are given an entity in the form of a phrase, topic or word. Respond with 'yes' or 'no' depending on whether the entity is related to Singapore in any way."},
             {"role": "user", "content": entity}
         ]
-        # resp = self.cleaner_client.chat.completions.create(
-        #     model=self.config.cleaner_model_name,
-        #     messages=messages,
-        #     temperature=0  # Deterministic
-        # )
-        # return resp.choices[0].message.content.strip().lower() == "yes"
         resp = self.cleaner_client.chat.completions.create(
             model=self.config.cleaner_model_name,
             messages=messages,
             n=3,
-            temperature=0.7  # or even 1.0 for max variation
+            temperature=0.7
         )
         responses = [choice.message.content.strip().lower() for choice in resp.choices]
         return responses.count("yes") > responses.count("no")
+
+    def _get_all_seed_entities(self) -> List[str]:
+        """Get all seed entities from the seed entities file"""
+        if not self.seed_entities_file or not self.seed_entities_file.exists():
+            return []
+        
+        seed_entities = []
+        try:
+            with self.seed_entities_file.open(encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        obj = json.loads(line)
+                        entity = obj.get('entity')
+                        if entity is not None:
+                            seed_entities.append(entity.strip())
+                    except json.JSONDecodeError:
+                        continue
+        except Exception:
+            pass
+        return seed_entities
+
+    def _get_all_entities(self) -> Dict[str, List[str]]:
+        """Get all entities from the database"""
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        
+        # Get all entities with their labels
+        c.execute("""
+            SELECT l.label, e.entity_text 
+            FROM entities e 
+            JOIN labels l ON e.label_id = l.label_id
+        """)
+        
+        entities_by_label = defaultdict(list)
+        for label, entity_text in c.fetchall():
+            entities_by_label[label].append(entity_text)
+        
+        conn.close()
+        return dict(entities_by_label)
 
 
     def _process_chunk(self, chunk: str) -> List[Dict[str, Any]]:

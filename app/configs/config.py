@@ -31,6 +31,7 @@ class TopicExtractorConfig:
     gliner_threshold: int = 0.9
     gliner_labels_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_entity_labels.jsonl"
     abbrev_map_path : str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_lexical_labels.json"
+    seed_entities_file : str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/classified_entities_filtered_sampled_500.jsonl"
     concurrency: int = 16
     output_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities/extracted_entities.json"
     embedding_model: str = "BAAI/bge-m3"
@@ -42,11 +43,16 @@ class TopicExtractorConfig:
 
 @dataclass
 class QueryExpansionConfig:
-    data_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities/extracted_entities.json"
+    db_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities"
     base_url: str = "http://localhost:8124/v1"
     model_name: str = "google/gemma-3-12b-it"
     expansion_depth: int = 4
     expansion_width: int = 4
+    bottom_n_labels: int = 8
+    bottom_n_entities: int = 12
+    min_entity_count: int = 1   # “underexplored” threshold
+    use_embeddings: bool = True
+
 
 def load_config(file_path):
     config_classes = {}

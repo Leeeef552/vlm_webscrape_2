@@ -19,6 +19,7 @@
     "gliner_threshold": 0.9,
     "gliner_labels_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_entity_labels.jsonl",
     "abbrev_map_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_lexical_labels.json",
+    "seed_entities_file": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/classified_entities_filtered_sampled_500.jsonl",
     "concurrency": 16,
     "output_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities/extracted_entities.json",
     "embedding_model": "BAAI/bge-m3",
@@ -29,10 +30,13 @@
     "validator_base_url": "http://localhost:8124/v1"
   },
   "query_expansion": {
-    "data_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities/extracted_entities.json",
+    "db_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities",
     "model_name": "google/gemma-3-12b-it",
     "base_url": "http://localhost:8124/v1",
     "expansion_depth": 4,
-    "expansion_width": 4
+    "expansion_width": 4,
+    "bottom_n_labels": 8,
+    "bottom_n_entities": 12,
+    "min_entity_count": 1
   }
 }

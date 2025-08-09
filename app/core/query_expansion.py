@@ -1,4 +1,5 @@
 from ..utils.logger import logger
+from ..utils.prompts import depth_prompt, width_prompt
 from ..configs.config import QueryExpansionConfig
 from pathlib import Path
 import json
@@ -6,64 +7,158 @@ import re
 from openai import OpenAI
 from typing import List, Tuple, Dict
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
+from typing import Optional
+import sqlite3
+import numpy as np
+from numpy.linalg import norm
 
 class QueryExpansion:
     def __init__(self, config: QueryExpansionConfig):
         self.config = config
-        self.data_path = Path(self.config.data_path)
+        self.db_path = Path(self.config.db_path) / "kb.sqlite"
 
         # Initialize OpenAI client once
-        self.client = OpenAI(
-            base_url=self.config.base_url,
-            api_key="dummy"
-        )
+        self.client = OpenAI(base_url=self.config.base_url, api_key="dummy")
 
         # Prompt templates
-        self.depth_prompt = (
-            """
-            Given an initial base query, use your internal knowledge about Singapore to generate deeper and more specific queries related to the provided subject.
+        self.depth_prompt = depth_prompt
+        self.width_prompt = width_prompt
 
-            Instructions:
-            - Take the original query provided.
-            - Generate {n} new queries that specifically deepen the subject matter. Expand “depth” by adding finer-grained facets (e.g. departments, programmes, policies, reports, initiatives, locations).
-            - Focus exclusively on Singapore-specific context or examples.
-            - Only when relevant and logical, incorporate any of the below topics found within the below labels in the query expansion. The provided labels are entity classes, infer what they mean and what they refer to: {bottom_labels}
-            - Only provide the new queries, do not provide rationale or explanations 
-            - Queries must **strictly** be about Singapore or must be related to Singapore 
+    ##########################################
+    ##          SQL/Helper Functions        ##
+    ##########################################
+    
+    def _conn(self):
+        return sqlite3.connect(self.db_path)
 
-            Example:
-            Original Query: \"Home Team Science and Technology\"
-            Generated Queries:
-            1. \"Home Team Science and Technology departments Singapore\"
-            2. \"Home Team Science and Technology research programmes Singapore\"
-            3. \"Home Team Science and Technology innovation projects Singapore\"
-            4. \"Home Team Science and Technology funding initiatives Singapore\"
-            """
-        )
+    def _get_total_docs(self) -> int:
+        with self._conn() as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT value FROM metadata WHERE key='total_docs'")
+            row = cur.fetchone()
+            return int(row[0]) if row and row[0] is not None else 0
 
-        self.width_prompt = (
-            """
-            Given a root query, leverage your internal knowledge about Singapore to generate related but distinct queries within a complementary domain, explicitly relevant to Singapore.
+    def get_bottom_labels(self, n: Optional[int] = None):
+        """Rank labels by doc coverage then by entity count."""
+        n = n or self.config.bottom_n_labels
+        with self._conn() as conn:
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT l.label_id, l.label,
+                       COALESCE(lc.docs_with_label,0) AS docs,
+                       COUNT(e.entity_id) AS n_entities,
+                       COALESCE(SUM(e.total_count),0) AS mentions
+                FROM labels l
+                LEFT JOIN label_coverage lc ON lc.label_id = l.label_id
+                LEFT JOIN entities e ON e.label_id = l.label_id
+                GROUP BY l.label_id
+                ORDER BY docs ASC, n_entities ASC, mentions ASC
+                LIMIT ?
+            """, (n,))
+            return cur.fetchall()  # (label_id, label, docs, n_entities, mentions)
 
-            Instructions:
-            - Take the original query provided.
-            - Generate {n} complementary queries that are related but differ significantly from the original query. Explore a different but related topic (e.g. sibling dishes, parallel agencies, alternate programmes, related events).
-            - Focus exclusively on Singapore-specific context or examples.
-            - Only when relevant and logical, incorporate any of these subjects within the queries: {bottom_entities}
-            - Only provide the new queries, do not provide rationale or explanations
-            - Queries must **strictly** be about Singapore or must be related to Singapore
-            
-            Example:
-            Original Query: \"Chicken rice\"
-            Generated Complementary Queries:
-            1. \"Chilli crab Singapore\"
-            2. \"Hainanese curry rice Singapore\"
-            3. \"Laksa stalls in Singapore\"
-            4. \"Satay restaurants Singapore\"
-            """
-        )
+    def get_bottom_entities(self, n: Optional[int] = None, max_count: Optional[int] = None):
+        """Underexplored entities: lowest total_count; break ties by degree desc."""
+        n = n or self.config.bottom_n_entities
+        max_count = max_count or self.config.min_entity_count
+        with self._conn() as conn:
+            cur = conn.cursor()
+            # degree = number of unique neighbors
+            cur.execute("""
+                WITH deg AS (
+                  SELECT entity_id, COUNT(*) AS degree FROM (
+                    SELECT entity_a AS entity_id FROM cooccurrence
+                    UNION ALL
+                    SELECT entity_b AS entity_id FROM cooccurrence
+                  ) t GROUP BY entity_id
+                )
+                SELECT e.entity_id, l.label, e.entity_text, e.total_count,
+                       COALESCE(d.degree,0) AS degree
+                FROM entities e
+                JOIN labels l ON l.label_id = e.label_id
+                LEFT JOIN deg d ON d.entity_id = e.entity_id
+                WHERE e.total_count <= ?
+                ORDER BY e.total_count ASC, d.degree DESC, e.entity_text ASC
+                LIMIT ?
+            """, (max_count, n))
+            return cur.fetchall()  # (entity_id, label, text, count, degree)
 
+    def top_neighbors(self, entity_id: int, k: int = 5):
+        with self._conn() as conn:
+            cur = conn.cursor()
+            # both directions
+            cur.execute("""
+                SELECT e2.entity_text, c.count
+                FROM cooccurrence c
+                JOIN entities e2 ON e2.entity_id = c.entity_b
+                WHERE c.entity_a = ?
+                UNION ALL
+                SELECT e1.entity_text, c.count
+                FROM cooccurrence c
+                JOIN entities e1 ON e1.entity_id = c.entity_a
+                WHERE c.entity_b = ?
+                ORDER BY count DESC
+                LIMIT ?
+            """, (entity_id, entity_id, k))
+            return cur.fetchall()  # [(text, count), ...]
+
+    def _load_embeddings(self):
+        """Return list of (entity_id, label, text, count, vector[np.ndarray])."""
+        with self._conn() as conn:
+            cur = conn.cursor()
+            cur.execute("""
+              SELECT e.entity_id, l.label, e.entity_text, e.total_count, emb.vector
+              FROM embeddings emb
+              JOIN entities e ON e.entity_id = emb.entity_id
+              JOIN labels l ON l.label_id = e.label_id
+            """)
+            items = []
+            for eid, label, text, cnt, vec_json in cur.fetchall():
+                v = np.asarray(json.loads(vec_json), dtype=np.float32)
+                items.append((eid, label, text, cnt, v))
+            return items
+
+    @staticmethod
+    def _cos(a, b):
+        na, nb = norm(a), norm(b)
+        if na == 0 or nb == 0: return 0.0
+        return float(a @ b) / (na * nb)
+
+    def embedding_neighbors(self, target_id: int, k: int = 8):
+        items = getattr(self, "_emb_cache", None)
+        if items is None:
+            items = self._load_embeddings()
+            self._emb_cache = items
+        id_to_idx = {eid: i for i, (eid, *_rest) in enumerate(items)}
+        if target_id not in id_to_idx: return []
+        qi = id_to_idx[target_id]
+        qv = items[qi][4]
+        sims = []
+        for i, (eid, _lab, text, _cnt, v) in enumerate(items):
+            if i == qi: continue
+            sims.append((text, self._cos(qv, v)))
+        sims.sort(key=lambda x: x[1], reverse=True)
+        return [t for t, _ in sims[:k]]
+
+    def mmr(self, candidates: List[str], embed_lookup: Dict[str, np.ndarray], k: int = 10, lam: float = 0.7):
+        if not candidates: return []
+        selected = [candidates[0]]
+        rest = candidates[1:]
+        def sim(a,b): 
+            va, vb = embed_lookup.get(a), embed_lookup.get(b)
+            return self._cos(va, vb) if (va is not None and vb is not None) else 0.0
+        while rest and len(selected) < k:
+            best, best_score = None, -1e9
+            for c in rest:
+                rel = max(sim(c, s) for s in selected) if selected else 0.0
+                relevance = 0.0  # if you want, plug a query vector here
+                score = lam*relevance - (1-lam)*rel
+                if score > best_score:
+                    best, best_score = c, score
+            selected.append(best)
+            rest.remove(best)
+        return selected
+    
     def _parse_queries(self, text: str) -> List[str]:
         """
         Parse numbered or quoted lines from the LLM response into a list of query strings.
@@ -77,109 +172,82 @@ class QueryExpansion:
                 queries.append(m.group(1).strip())
         return queries
 
-    def get_bottom_labels(self, n: int = 5) -> List[Tuple[str, int]]:
-        """
-        Return the bottom-n labels (categories) by total count.
-        """
-        with open(self.data_path, 'r') as f:
-            data = json.load(f)
+    #####################################################
+    ##          Core Query Expansion Functions         ##
+    #####################################################
 
-        label_counts = {label: sum(entities.values()) for label, entities in data.items()}
-        sorted_labels = sorted(label_counts.items(), key=lambda x: x[1])
-        return sorted_labels[:n]
-
-    def get_bottom_entities(self, n: int = 5) -> List[Tuple[str, int]]:
-        """
-        Return the bottom-n individual entities by count.
-        """
-        with open(self.data_path, 'r') as f:
-            data = json.load(f)
-
-        entity_counts = {
-            entity: count
-            for entities in data.values()
-            for entity, count in entities.items()
-        }
-        sorted_entities = sorted(entity_counts.items(), key=lambda x: x[1])
-        return sorted_entities[:n]
-
-    def generate_depth_query(self, base_query: str) -> List[str]:
-        """
-        Generate n deep expansion queries for a base query.
-        """
+    def generate_depth_query(self, base_query: str, extra_hints: List[str] = None) -> List[str]:
         n = self.config.expansion_depth
-        bottom_labels = [label for label, _ in self.get_bottom_labels()]
+        # rows: (label_id, label, docs, n_entities, mentions)
+        bottom_labels = [row[1] for row in self.get_bottom_labels()]
         labels_str = ", ".join(bottom_labels)
+        hints = ""
+        if extra_hints:
+            hints = "\nWhen helpful, consider these related entities: " + ", ".join(extra_hints[:8])
 
-        prompt = self.depth_prompt.format(n=n, bottom_labels=labels_str)
+        prompt = self.depth_prompt.format(n=n, bottom_labels=labels_str) + hints
         messages = [
-            {"role": "system", "content": "You are a Singapore-focused query expansion assistant that creates google search queries for research and knowledge base expansion"},
+            {"role": "system", "content": "You are a Singapore-focused query expansion assistant that creates Google search queries for research and knowledge base expansion"},
             {"role": "user", "content": f"{prompt}\nOriginal Query: \"{base_query}\""}
         ]
-
-        resp = self.client.chat.completions.create(
-            model=self.config.model_name,
-            messages=messages,
-        )
-
+        resp = self.client.chat.completions.create(model=self.config.model_name, messages=messages)
         return self._parse_queries(resp.choices[0].message.content)
 
-    def generate_width_query(self, base_query: str) -> List[str]:
-        """
-        Generate n complementary expansion queries for a base query.
-        """
+
+
+    def generate_width_query(self, base_query: str, extra_hints: List[str] = None) -> List[str]:
         n = self.config.expansion_width
-        bottom_entities = [entity for entity, _ in self.get_bottom_entities()]
+        # rows: (entity_id, label, entity_text, total_count, degree)
+        bottom_entities = [row[2] for row in self.get_bottom_entities()]
         entities_str = ", ".join(bottom_entities)
-        prompt = self.width_prompt.format(n=n, bottom_entities=entities_str)
+        hints = ""
+        if extra_hints:
+            hints = "\nConsider these related/neighbor entities too: " + ", ".join(extra_hints[:8])
+
+        prompt = self.width_prompt.format(n=n, bottom_entities=entities_str) + hints
         messages = [
-            {"role": "system", "content": "You are a Singapore-focused query expansion assistant that creates google search queries for research and knowledge base expansion"},
+            {"role": "system", "content": "You are a Singapore-focused query expansion assistant that creates Google search queries for research and knowledge base expansion"},
             {"role": "user", "content": f"{prompt}\nOriginal Query: \"{base_query}\""}
         ]
-
-        resp = self.client.chat.completions.create(
-            model=self.config.model_name,
-            messages=messages,
-        )
-
+        resp = self.client.chat.completions.create(model=self.config.model_name, messages=messages)
         return self._parse_queries(resp.choices[0].message.content)
 
-    def _expand_one_entity(self, entity: str) -> Tuple[List[str], List[str]]:
-        depth_qs = self.generate_depth_query(entity)
-        width_qs = self.generate_width_query(entity)
+
+    def _expand_one_entity(self, entity: str, entity_id: Optional[int] = None) -> Tuple[List[str], List[str]]:
+        # collect neighbors for context
+        neighbor_texts = []
+        if entity_id is not None:
+            neighbor_texts += [row[0] for row in self.top_neighbors(entity_id, k=5)]
+            if self.config.use_embeddings:
+                neighbor_texts += self.embedding_neighbors(entity_id, k=5)
+
+        depth_qs = self.generate_depth_query(entity, extra_hints=neighbor_texts)
+        width_qs = self.generate_width_query(entity, extra_hints=neighbor_texts)
         return depth_qs, width_qs
 
-
     def auto_expand_entities(self) -> Dict[str, Dict[str, List[str]]]:
-        bottoms = self.get_bottom_entities()
-        if not bottoms:
+        if not self.db_path.exists():
+            raise FileNotFoundError(f"SQLite KB not found at {self.db_path}")
+        bottoms = self.get_bottom_entities(n=self.config.bottom_n_entities,
+                                            max_count=self.config.min_entity_count)
+        pairs = [(row[0], row[2]) for row in bottoms]  # (entity_id, entity_text)
+        if not pairs:
             logger.warning("No bottom entities found for auto expansion")
             return {}
 
-        expansions: Dict[str, Dict[str, List[str]]] = {}
-        # You can tune max_workers or pull from config:
-        max_workers = 4
-
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            # schedule one future per entity
-            future_to_entity = {
-                executor.submit(self._expand_one_entity, entity): entity
-                for entity, _ in bottoms
-            }
-
-            for future in as_completed(future_to_entity):
-                entity = future_to_entity[future]
+        expansions = {}
+        with ThreadPoolExecutor(max_workers=4) as ex:
+            fut2ent = {ex.submit(self._expand_one_entity, text, eid): (eid, text) for eid, text in pairs}
+            for fut in as_completed(fut2ent):
+                eid, text = fut2ent[fut]
                 try:
-                    depth_qs, width_qs = future.result()
-                    expansions[entity] = {
-                        "depth": depth_qs,
-                        "width": width_qs
-                    }
+                    depth_qs, width_qs = fut.result()
+                    expansions[text] = {"depth": depth_qs, "width": width_qs}
                 except Exception as exc:
-                    logger.error(f"Expansion failed for '{entity}': {exc}")
-                    expansions[entity] = {"depth": [], "width": []}
-
+                    logger.error(f"Expansion failed for '{text}': {exc}")
+                    expansions[text] = {"depth": [], "width": []}
         return expansions
+
 
     def auto_expand_labels(self) -> Dict[str, List[str]]:
         """
@@ -192,9 +260,10 @@ class QueryExpansion:
             return {}
 
         expansions: Dict[str, List[str]] = {}
-        for label, _ in bottoms:
-            width_qs = self.generate_width_query(label)
-            expansions[label] = width_qs
+        for row in bottoms:
+            label = row[1]
+            expansions[label] = self.generate_width_query(label)
+
         return expansions
     
     def auto_expand_all(self) -> Dict[str, Dict]:
