@@ -16,10 +16,17 @@
   "topic_extractor": {
     "data_file": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data",
     "gliner_model_name": "gliner-community/gliner_large-v2.5",
-    "gliner_threshold": 0.85,
+    "gliner_threshold": 0.9,
     "gliner_labels_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_entity_labels.jsonl",
-    "concurrency": 4,
-    "output_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities/extracted_entities.json"
+    "abbrev_map_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_lexical_labels.json",
+    "concurrency": 16,
+    "output_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities/extracted_entities.json",
+    "embedding_model": "BAAI/bge-m3",
+    "db_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities",
+    "cleaner_model_name": "unsloth/Llama-3.2-3B-Instruct",
+    "cleaner_base_url": "http://localhost:8125/v1",
+    "validator_model_name": "google/gemma-3-12b-it",
+    "validator_base_url": "http://localhost:8124/v1"
   },
   "query_expansion": {
     "data_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities/extracted_entities.json",

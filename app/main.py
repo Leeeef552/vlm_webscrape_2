@@ -13,9 +13,9 @@ from .utils.utils import load_links
 
 # === Configuration Variables ===
 # Path to the JSON config file
-CONFIG_PATH = "vlm_webscrape/app/configs/config.json"
+CONFIG_PATH = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/configs/config.json"
 # Number of full pipeline iterations (search → scrape → topics → expand)
-NUM_ITERATIONS = 10
+NUM_ITERATIONS = 1
 # Initial root query for the first crawl
 INITIAL_QUERY = "Singapore"
 

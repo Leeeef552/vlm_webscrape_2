@@ -1,9 +1,10 @@
 import re
 import json
 import logging
+import sqlite3
 from pathlib import Path
 from typing import Set, List, Dict, Any
-from collections import Counter
+from collections import Counter, defaultdict
 import torch
 from tqdm import tqdm
 from gliner import GLiNER
@@ -13,6 +14,9 @@ import nltk
 from nltk.corpus import stopwords
 from rapidfuzz import fuzz
 from copy import deepcopy
+from sentence_transformers import SentenceTransformer
+from openai import OpenAI
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 ############################
@@ -35,13 +39,9 @@ _SG_REGEX = re.compile(
 def mentions_singapore(text: str, fuzzy_threshold: int = 75) -> bool:
     if not text:
         return False
-    # Exact regex match still works on raw text
     if _SG_REGEX.search(text):
         return True
-
-    # Prepare normalized variants once
     normalized_variants = {normalize_text(v) for v in _SG_VARIANTS}
-    # Tokenize words, then normalize
     words = set(re.findall(r"[A-Za-z']+", text))
     for word in words:
         word_norm = normalize_text(word)
@@ -50,113 +50,341 @@ def mentions_singapore(text: str, fuzzy_threshold: int = 75) -> bool:
                 return True
     return False
 
+
 def normalize_text(s: str) -> str:
     return re.sub(r'[^a-z0-9]', '', s.lower())
 
-class HashableDict(dict):
-    def __hash__(self):
-        return hash(tuple(sorted(self.items())))
-    
-###############################
-####      main class     ######
-###############################
 
 class TopicExtractor:
     def __init__(self, config: TopicExtractorConfig):
         self.config = config
         self.data_file = Path(self.config.data_file)
-        device = getattr(self.config, "device", None) or ("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = GLiNER.from_pretrained(self.config.gliner_model_name, device=device)
-        self.threshold = self.config.gliner_threshold
+        self.output_path_json = Path(self.config.output_path)
+        # Expect config.sqlite_db_path for SQLite file
+        self.db_path = Path(self.config.db_path) / "kb.sqlite"
+
+        self.model = GLiNER.from_pretrained(self.config.gliner_model_name, device="cuda")
+        self.embedder = SentenceTransformer(self.config.embedding_model, device="cuda")
+
+        self.gliner_threshold = self.config.gliner_threshold
         self.concurrency = self.config.concurrency
-        self.output_path = self.config.output_path
 
         # Load labels from JSONL
         self.labels_path = Path(self.config.gliner_labels_path)
         with self.labels_path.open(encoding="utf-8") as f:
             raw_labels = [json.loads(line) for line in f]
-
-        # Process labels - GLiNER expects simple strings, not dicts
         self.labels = self._process_labels(raw_labels)
         logger.info(f"Loaded %d unique labels", len(self.labels))
 
-    ##################################
-    #    main extraction function    #
-    ##################################
-    def extract_from_file(self, max_words: int = 200, overlap_words: int = 5, fuzzy_threshold: int = 75) -> Dict[str, Any]:
-        raw_by_label: Dict[str, List[str]] = {}
-        files = list(self.data_file.glob('*.json')) if self.data_file.is_dir() else [self.data_file]
+        # Load abbrev map
+        with open(self.config.abbrev_map_path, encoding='utf-8') as f:
+            raw_map = json.load(f)
+            self.abbrev_map: Dict[str, str] = {k.lower(): v for k, v in raw_map.items()}
+
+
+        # Initialize or connect to SQLite
+        self._init_db()
+
+        # clients for llm
+        self.cleaner_client = OpenAI(
+            base_url=self.config.cleaner_base_url,
+            api_key="dummy"
+        )
+
+        self.validator_client = OpenAI(
+            base_url=self.config.validator_base_url,
+            api_key="dummy"
+        )
+
+    ########################################
+    #          database functions          #
+    ########################################
+
+    def _init_db(self) -> None:
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        # Create tables
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS labels (
+          label_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+          label       TEXT NOT NULL UNIQUE
+        )""")
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS entities (
+          entity_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+          label_id       INTEGER NOT NULL,
+          entity_text    TEXT NOT NULL,
+          total_count    INTEGER NOT NULL DEFAULT 0,
+          UNIQUE(label_id, entity_text),
+          FOREIGN KEY(label_id) REFERENCES labels(label_id)
+        )""")
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS embeddings (
+          entity_id   INTEGER PRIMARY KEY,
+          vector      TEXT NOT NULL,
+          FOREIGN KEY(entity_id) REFERENCES entities(entity_id)
+        )""")
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS cooccurrence (
+          entity_a     INTEGER NOT NULL,
+          entity_b     INTEGER NOT NULL,
+          count        INTEGER NOT NULL DEFAULT 0,
+          PRIMARY KEY (entity_a, entity_b),
+          FOREIGN KEY(entity_a) REFERENCES entities(entity_id),
+          FOREIGN KEY(entity_b) REFERENCES entities(entity_id)
+        )""")
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS label_coverage (
+          label_id        INTEGER PRIMARY KEY,
+          docs_with_label INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY(label_id) REFERENCES labels(label_id)
+        )""")
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS metadata (
+          key   TEXT PRIMARY KEY,
+          value TEXT
+        )""")
+        conn.commit()
+        conn.close()
+
+
+    def _save_to_db(self, data: Dict[str, Any]) -> None:
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        # Metadata
+        c.execute("INSERT OR REPLACE INTO metadata(key,value) VALUES(?,?)", ('total_docs', str(data['total_docs'])))
+        # Labels
+        for label, ents in data['counts'].items():
+            c.execute("INSERT OR IGNORE INTO labels(label) VALUES(?)", (label,))
+        # Entities and embeddings
+        for label, ents in data['counts'].items():
+            c.execute("SELECT label_id FROM labels WHERE label=?", (label,))
+            label_id = c.fetchone()[0]
+            for ent, cnt in ents.items():
+                c.execute(
+                    "INSERT OR IGNORE INTO entities(label_id,entity_text,total_count) VALUES(?,?,?)", 
+                    (label_id, ent, cnt)
+                )
+                c.execute(
+                    "UPDATE entities SET total_count=? WHERE label_id=? AND entity_text=?", 
+                    (cnt, label_id, ent)
+                )
+                c.execute("SELECT entity_id FROM entities WHERE label_id=? AND entity_text=?", (label_id, ent))
+                entity_id = c.fetchone()[0]
+                vec = json.dumps(data['embeddings'][label][ent])
+                c.execute(
+                    "INSERT OR REPLACE INTO embeddings(entity_id,vector) VALUES(?,?)", 
+                    (entity_id, vec)
+                )
+        # Co-occurrence
+        for e1, neigh in data['co_occurrence'].items():
+            c.execute("SELECT entity_id FROM entities WHERE entity_text=?", (e1,))
+            row = c.fetchone()
+            if not row: continue
+            id1 = row[0]
+            for e2, cnt in neigh.items():
+                c.execute("SELECT entity_id FROM entities WHERE entity_text=?", (e2,))
+                row2 = c.fetchone()
+                if not row2: continue
+                id2 = row2[0]
+                a, b = (id1, id2) if id1 < id2 else (id2, id1)
+                c.execute(
+                    "INSERT OR IGNORE INTO cooccurrence(entity_a,entity_b,count) VALUES(?,?,?)", 
+                    (a, b, cnt)
+                )
+                c.execute(
+                    "UPDATE cooccurrence SET count=? WHERE entity_a=? AND entity_b=?", 
+                    (cnt, a, b)
+                )
+        # Coverage
+        for label, cov in data['coverage_by_label'].items():
+            c.execute("SELECT label_id FROM labels WHERE label=?", (label,))
+            lid = c.fetchone()[0]
+            docs = int(cov * data['total_docs'])
+            c.execute(
+                "INSERT OR REPLACE INTO label_coverage(label_id,docs_with_label) VALUES(?,?)", 
+                (lid, docs)
+            )
+        conn.commit()
+        conn.close()
+
+    ########################################
+    #            core functions            #
+    ########################################
+
+    def extract_from_file(self, max_words: int = 275, overlap_words: int = 15, fuzzy_threshold: int = 75) -> Dict[str, Any]:
+        raw_by_label       = defaultdict(list)
+        co_occurrence      = defaultdict(lambda: defaultdict(int))
+        docs_with_label    = defaultdict(int)
+        total_docs         = 0
+
+        files = list(self.data_file.glob('*.json')) \
+                if self.data_file.is_dir() else [self.data_file]
         logger.info("Processing %d file(s) for extraction", len(files))
 
+        relevance_cache = {}
+
         for filepath in tqdm(files, desc="Files processed"):
-            logger.info("Processing file: %s", filepath)
             try:
-                with filepath.open(encoding='utf-8') as f:
-                    data = json.load(f)
+                data = json.load(filepath.open(encoding='utf-8'))
                 entries = data if isinstance(data, list) else [data]
 
-                if not any(
-                    mentions_singapore(str(entry.get("text_content", "") or ""), fuzzy_threshold)
-                    for entry in entries
-                ):
-                    logger.info("Skipping %s because it contains no Singapore signal", filepath)
+                # skip file if no SG mention
+                if not any(mentions_singapore(e.get("text_content",""), fuzzy_threshold)
+                           for e in entries):
                     continue
 
-                for entry in tqdm(entries, desc="Entries", leave=False):
-                    text = entry.get('text_content', '')
-                    if not mentions_singapore(text, fuzzy_threshold):
-                        continue  # skip entry early
-
-                    if len(text) < 10:
+                for entry in entries:
+                    text = entry.get('text_content','') or ''
+                    if len(text) < 10 or not mentions_singapore(text, fuzzy_threshold):
                         continue
+
+                    entry_entities          = set()
+                    entry_entities_by_label = defaultdict(set)
                     chunks = self._chunk_text_for_gliner(text, max_words, overlap_words)
-                    for chunk in chunks:
-                        try:
-                            preds = self.model.predict_entities(chunk, self.labels, threshold=self.threshold)
-                            for p in preds:
-                                label = p.get('label')
-                                text_val = p.get('text', '').strip()
-                                if label and text_val:
-                                    raw_by_label.setdefault(label, []).append(text_val)
-                        except Exception as e:
-                            logger.warning(f"Error processing chunk: {e}")
+
+                    # --- begin parallel chunk processing ---
+                    futures = {}
+                    with ThreadPoolExecutor(max_workers=self.concurrency) as exe:
+                        for chunk in chunks:
+                            futures[ exe.submit(self._process_chunk, chunk) ] = chunk
+
+                        for fut in tqdm(as_completed(futures),
+                                        total=len(futures),
+                                        desc=f"Chunks in {filepath.name}",
+                                        leave=False):
+                            try:
+                                preds = fut.result()
+                                for p in preds:
+                                    label   = p.get("label")
+                                    text_val= p.get("text","").strip()
+                                    if not label or not text_val:
+                                        continue
+
+                                    # map to long form if it's a known abbreviation
+                                    mapped = self.abbrev_map.get(text_val.lower(), text_val)
+
+                                    # check relevance before adding
+                                    if mapped not in relevance_cache:
+                                        relevance_cache[mapped] = self._check_relevance(mapped)
+                                    if relevance_cache[mapped]:
+                                        raw_by_label[label].append(mapped)
+                                        entry_entities.add(mapped)
+                                        entry_entities_by_label[label].add(mapped)
+
+                            except Exception as e:
+                                logger.warning(f"Error in parallel chunk: {e}")
+                    # --- end parallel chunk processing ---
+
+                    if entry_entities:
+                        total_docs += 1
+                        from itertools import combinations
+                        for e1, e2 in combinations(entry_entities, 2):
+                            co_occurrence[e1][e2] += 1
+                            co_occurrence[e2][e1] += 1
+
+                        for label, ents in entry_entities_by_label.items():
+                            if ents:
+                                docs_with_label[label] += 1
+
             except Exception as e:
                 logger.error(f"Error processing file {filepath}: {e}")
 
-        # Apply fuzzy clustering to get entity→count maps
-        fuzzy_counts: Dict[str, Dict[str, int]] = {
+        # Cluster and count
+        fuzzy_counts = {
             label: self._fuzzy_cluster_counts(items, threshold=fuzzy_threshold)
             for label, items in raw_by_label.items()
         }
 
-        # Merge into existing output JSON instead of overwriting
-        out = Path(self.output_path)
-        out.parent.mkdir(parents=True, exist_ok=True)
-
-        if out.exists():
-            with out.open('r', encoding='utf-8') as f:
+        # Merge with existing JSON (optional)
+        out_json = self.output_path_json
+        out_json.parent.mkdir(parents=True, exist_ok=True)
+        existing = {}
+        if out_json.exists():
+            with out_json.open('r', encoding='utf-8') as f:
                 existing = json.load(f)
-        else:
-            existing = {}
+        merged_counts = self._merge_fuzzy_counts(existing.get('counts', {}), fuzzy_counts, threshold=fuzzy_threshold)
 
-        merged = self._merge_fuzzy_counts(existing, fuzzy_counts, threshold=fuzzy_threshold)
+        # Compute embeddings
+        embeddings = {}
+        for label, ents in merged_counts.items():
+            embeddings[label] = {}
+            for ent in ents:
+                embeddings[label][ent] = self.embedder.encode(ent).tolist()
 
-        with out.open('w', encoding='utf-8') as f:
-            json.dump(merged, f, indent=2, ensure_ascii=False)
-        logger.info(f"Merged entity counts to {self.output_path}")
+        # Compute per-label distribution summing to 100%
+        docs_count_by_label = {label: docs_with_label.get(label, 0) for label in merged_counts}
+        coverage_by_label = {
+            label: docs_with_label.get(label, 0) / total_docs
+            for label in merged_counts
+        }
 
-        # Prepare summary counts
-        counts_by_label = {label: len(entities) for label, entities in merged.items()}
-        total_entities = sum(counts_by_label.values())
+        final_output = {
+            'counts': merged_counts,
+            'embeddings': embeddings,
+            'co_occurrence': {e: dict(neighbors) for e, neighbors in co_occurrence.items()},
+            'total_docs': total_docs,
+            'coverage_by_label': coverage_by_label,
+        }
 
+        # Save to JSON
+        with out_json.open('w', encoding='utf-8') as f:
+            json.dump(final_output, f, indent=2, ensure_ascii=False)
+
+        # Save to SQLite
+        self._save_to_db(final_output)
+
+        # Summary
+        unique_entities = sum(len(ents) for ents in merged_counts.values())
         return {
-            "total_entities": total_entities,
-            "counts_by_label": counts_by_label
+            'total_entities': unique_entities,
+            'total_docs': total_docs,
+            'counts_by_label': {l: len(v) for l, v in merged_counts.items()},
+            'coverage_by_label': coverage_by_label
         }
 
     ########################################
     #           helper functions           #
     ########################################
+    
+    def _check_relevance(self, entity: str) -> bool:
+        messages = [
+            {"role": "system", "content": "You are given an entity in the form of a phrase, topic or word. Respond with 'yes' or 'no' depending on whether the entity is related to Singapore in any way."},
+            {"role": "user", "content": entity}
+        ]
+        # resp = self.cleaner_client.chat.completions.create(
+        #     model=self.config.cleaner_model_name,
+        #     messages=messages,
+        #     temperature=0  # Deterministic
+        # )
+        # return resp.choices[0].message.content.strip().lower() == "yes"
+        resp = self.cleaner_client.chat.completions.create(
+            model=self.config.cleaner_model_name,
+            messages=messages,
+            n=3,
+            temperature=0.7  # or even 1.0 for max variation
+        )
+        responses = [choice.message.content.strip().lower() for choice in resp.choices]
+        return responses.count("yes") > responses.count("no")
+
+
+    def _process_chunk(self, chunk: str) -> List[Dict[str, Any]]:
+        """Helper to clean and then run GLiNER on a single chunk."""
+        cleaned = self._clean_text_llm(chunk)
+        return self.model.predict_entities(cleaned, self.labels, threshold=self.gliner_threshold)
+
+
+    def _clean_text_llm(self, text):
+        messages = [
+            {"role": "system", "content": "You are given a text scraped from a website, clean it to be suitable for entity extraction. Give the cleaned text directly with no explanation"},
+            {"role": "user", "content": text}
+        ]
+        resp = self.cleaner_client.chat.completions.create(
+            model=self.config.cleaner_model_name,
+            messages=messages,
+        )
+        return resp.choices[0].message.content
+
 
     def _process_labels(self, raw_labels: List[Dict]) -> List[str]:
         processed_labels: List[str] = []
@@ -171,7 +399,8 @@ class TopicExtractor:
                 seen_labels.add(label_name)
         return processed_labels
 
-    def _fuzzy_cluster_counts(self, items: List[str], threshold: int = 85) -> Dict[str, int]:
+
+    def _fuzzy_cluster_counts(self, items: List[str], threshold: int = 75) -> Dict[str, int]:
         clusters: List[str] = []
         counts: List[int] = []
 
@@ -189,6 +418,7 @@ class TopicExtractor:
                 counts.append(1)
 
         return dict(zip(clusters, counts))
+
 
     def _merge_fuzzy_counts(self, existing: Dict[str, Dict[str, int]], new_counts: Dict[str, Dict[str, int]], threshold: int) -> Dict[str, Dict[str, int]]:
         merged = deepcopy(existing)
@@ -212,90 +442,9 @@ class TopicExtractor:
                     merged[label][ent] = merged[label].get(ent, 0) + cnt
 
         return merged
+    
 
-    def extract_entities(self, text: str, max_words: int = 200, overlap_words: int = 5) -> Set[str]:
-        if len(text) < 5:
-            return set()
-        chunks = self._chunk_text_gliner(text, max_words, overlap_words)
-        entities: Set[str] = set()
-        logger.info("Extracting entities from text with %d chunks", len(chunks))
-        for chunk in tqdm(chunks, desc="Entity extraction chunks"):
-            try:
-                chunk_entities = self._predict_chunk(chunk)
-                entities.update(chunk_entities)
-            except Exception as e:
-                logger.warning(f"Error processing chunk: {e}")
-        logger.info("Found %d unique entities", len(entities))
-        return entities
-
-    def analyze_entities(self, text: str, max_words: int = 200, overlap_words: int = 20) -> Dict[str, Any]:
-        if len(text) < 10:
-            return {"total_entities": 0, "counts_by_label": {}}
-        chunks = self._chunk_text_for_gliner(text, max_words, overlap_words)
-
-        all_predictions: List[Dict[str, Any]] = []
-        logger.info("Analyzing entities in %d chunks", len(chunks))
-        for chunk in tqdm(chunks, desc="Entity analysis chunks"):
-            try:
-                preds = self.model.predict_entities(chunk, self.labels, threshold=self.threshold)
-                for p in preds:
-                    label = p.get("label")
-                    text_val = p.get("text", "").strip()
-                    if label and text_val:
-                        all_predictions.append({"label": label, "text": text_val})
-            except Exception as e:
-                logger.warning(f"Error analyzing chunk: {e}")
-        total = len(all_predictions)
-        counts = Counter(item["label"] for item in all_predictions)
-        logger.info("Total entity occurrences: %d", total)
-        return {"total_entities": total, "counts_by_label": dict(counts)}
-
-    def save_entities_by_label(self, entities_by_label: Dict[str, Set[str]], output_path: str) -> None:
-        output_file = Path(output_path)
-        output_file.parent.mkdir(parents=True, exist_ok=True)
-        hierarchical_entities = self._build_hierarchical_structure(entities_by_label)
-        total_entities = sum(len(ents) for ents in entities_by_label.values())
-        logger.info(f"Saved {total_entities} unique entities in hierarchical format to {output_path}")
-
-    def load_entities_by_label(self, entities_path: str) -> Dict[str, Dict[str, int]]:
-        with open(entities_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        total = sum(len(ents) for ents in data.values())
-        logger.info(f"Loaded {total} entities across {len(data)} labels from {entities_path}")
-        return data
-
-    def analyze_entities_from_file(self, entities_path: str) -> Dict[str, Any]:
-        with open(entities_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        counts_by_label = {label: len(ents) for label, ents in data.items()}
-        total_entities = sum(counts_by_label.values())
-        all_entities = set().union(*(ents.keys() for ents in data.values()))
-        analytics = {
-            'total_entities': total_entities,
-            'unique_entities_total': len(all_entities),
-            'counts_by_label': counts_by_label,
-            'labels_count': len(data),
-            'entities_by_label': data
-        }
-        logger.info(f"Analytics: {analytics['total_entities']} total entities across {analytics['labels_count']} labels")
-        return analytics
-
-    def get_entities_for_label(self, entities_path: str, label: str) -> List[str]:
-        data = self.load_entities_by_label(entities_path)
-        entities = list(data.get(label, {}).keys())
-        logger.info(f"Found {len(entities)} entities for label '{label}'")
-        return entities
-
-    def _predict_chunk(self, chunk: str) -> Set[str]:
-        try:
-            preds = self.model.predict_entities(chunk, self.labels, threshold=self.threshold)
-            return {p["text"].strip() for p in preds if len(p.get("text", "").strip()) > 2}
-        except Exception as e:
-            logger.warning(f"Error in _predict_chunk: {e}")
-            return set()
-
-    @staticmethod
-    def _chunk_text_for_gliner(text: str, max_words: int, overlap_words: int) -> List[str]:
+    def _chunk_text_for_gliner(self, text: str, max_words: int, overlap_words: int) -> List[str]:
         words = text.split()
         if len(words) <= max_words:
             return [text]
@@ -309,16 +458,15 @@ class TopicExtractor:
             start = end - overlap_words
         return chunks
 
+
 def main() -> None:
     config = TopicExtractorConfig()
     extractor = TopicExtractor(config)
-
     stats = extractor.extract_from_file()
-
     print(f"Total unique entities found: {stats['total_entities']}")
-    print("Unique entities per label:")
+    print(f"Processed documents: {stats['total_docs']}")
     for label, cnt in sorted(stats['counts_by_label'].items(), key=lambda x: x[1], reverse=True):
-        print(f"  {label}: {cnt}")
+        print(f"{label}: {cnt}")
 
 if __name__ == "__main__":
     main()

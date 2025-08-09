@@ -28,10 +28,17 @@ class ScraperConfig:
 class TopicExtractorConfig:
     data_file: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data"
     gliner_model_name: str = "urchade/gliner_large-v2.1"
-    gliner_threshold: int = 0.75
+    gliner_threshold: int = 0.9
     gliner_labels_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_entity_labels.jsonl"
-    concurrency: int = 4
+    abbrev_map_path : str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_lexical_labels.json"
+    concurrency: int = 16
     output_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities/extracted_entities.json"
+    embedding_model: str = "BAAI/bge-m3"
+    db_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities"
+    cleaner_model_name: str = "unsloth/Llama-3.2-3B-Instruct"
+    cleaner_base_url: str = "http://localhost:8125/v1"
+    validator_model_name: str = "google/gemma-3-12b-it"
+    validator_base_url: str = "http://localhost:8124/v1"
 
 @dataclass
 class QueryExpansionConfig:
