@@ -11,7 +11,7 @@ class CrawlerConfig:
     pages: int = 1
     time_range: str = "year"
     timeout: int = 4
-    links_file_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/links.jsonl"
+    links_file_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/global_links.jsonl"
     searxng_url: str = "http://localhost:3628/"
 
 @dataclass
@@ -46,13 +46,11 @@ class QueryExpansionConfig:
     db_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities"
     base_url: str = "http://localhost:8124/v1"
     model_name: str = "google/gemma-3-12b-it"
-    expansion_depth: int = 4
-    expansion_width: int = 4
-    bottom_n_labels: int = 8
-    bottom_n_entities: int = 12
-    min_entity_count: int = 1   # “underexplored” threshold
-    use_embeddings: bool = True
-
+    num_queries_per_entity: int = 4
+    num_queries_per_labels: int = 4
+    n_labels: int = 5 # number of labels to extract (should be between 1 to max number of labels specified to the gliner model)
+    n_entities: float = 0.1 # 30% of graph at most
+    entities_cap: int = 128 # capped at 128 entities extracted
 
 def load_config(file_path):
     config_classes = {}

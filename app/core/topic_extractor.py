@@ -287,10 +287,7 @@ class TopicExtractor:
                         for chunk in chunks:
                             futures[ exe.submit(self._process_chunk, chunk) ] = chunk
 
-                        for fut in tqdm(as_completed(futures),
-                                        total=len(futures),
-                                        desc=f"Chunks in {filepath.name}",
-                                        leave=False):
+                        for fut in tqdm(as_completed(futures), total=len(futures), desc=f"Extracting Entities from chunks in {filepath.name}", leave=False):
                             try:
                                 preds = fut.result()
                                 for p in preds:
@@ -303,12 +300,18 @@ class TopicExtractor:
                                     mapped = self.abbrev_map.get(text_val.lower(), text_val)
 
                                     # check relevance before adding
+                                    matched_entity = self._check_relevance(mapped)
+                                    # check relevance before adding
+                                    matched_entity = self._check_relevance(mapped)
+
                                     if mapped not in relevance_cache:
-                                        relevance_cache[mapped] = self._check_relevance(mapped)
-                                    if relevance_cache[mapped]:
-                                        raw_by_label[label].append(mapped)
-                                        entry_entities.add(mapped)
-                                        entry_entities_by_label[label].add(mapped)
+                                        relevance_cache[mapped] = matched_entity is not None
+
+                                    if matched_entity is not None:
+                                        # Use the canonical version (either from seed/DB or original if LLM approved)
+                                        raw_by_label[label].append(matched_entity)
+                                        entry_entities.add(matched_entity)
+                                        entry_entities_by_label[label].add(matched_entity)
 
                             except Exception as e:
                                 logger.warning(f"Error in parallel chunk: {e}")
@@ -385,22 +388,25 @@ class TopicExtractor:
     #           helper functions           #
     ########################################
     
-    def _check_relevance(self, entity: str) -> bool:
-        # First, check if the entity matches any seed entities using fuzzy matching
+    def _check_relevance(self, entity: str) -> str:
+        """
+        Checks if the entity matches any seed entity or existing DB entity via fuzzy match.
+        If matched, returns the canonical (seed) version; otherwise returns original.
+        """
         entity_lower = entity.lower().strip()
-        
-        # Check against seed entities
+
+        # Check against seed entities first
         for seed_entity in self._get_all_seed_entities():
             if fuzz.ratio(entity_lower, seed_entity.lower()) >= 75:
-                return True
-        
-        # If no match found in seed entities, check against existing entities in DB
+                return seed_entity
+
+        # Then check against existing entities in DB
         for label, entities in self._get_all_entities().items():
             for db_entity in entities:
                 if fuzz.ratio(entity_lower, db_entity.lower()) >= 75:
-                    return True
-        
-        # Fallback to LLM if fuzzy matching doesn't find a match
+                    return db_entity
+
+        # Fallback to LLM if nothing matches
         messages = [
             {"role": "system", "content": "You are given an entity in the form of a phrase, topic or word. Respond with 'yes' or 'no' depending on whether the entity is related to Singapore in any way."},
             {"role": "user", "content": entity}
@@ -412,8 +418,12 @@ class TopicExtractor:
             temperature=0.7
         )
         responses = [choice.message.content.strip().lower() for choice in resp.choices]
-        return responses.count("yes") > responses.count("no")
+        if responses.count("yes") > responses.count("no"):
+            return entity  # Keep original if LLM says yes
+        else:
+            return None  # Discard if LLM says no
 
+    
     def _get_all_seed_entities(self) -> List[str]:
         """Get all seed entities from the seed entities file"""
         if not self.seed_entities_file or not self.seed_entities_file.exists():
@@ -436,6 +446,7 @@ class TopicExtractor:
         except Exception:
             pass
         return seed_entities
+
 
     def _get_all_entities(self) -> Dict[str, List[str]]:
         """Get all entities from the database"""

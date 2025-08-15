@@ -33,10 +33,10 @@
     "db_path": "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities",
     "model_name": "google/gemma-3-12b-it",
     "base_url": "http://localhost:8124/v1",
-    "expansion_depth": 4,
-    "expansion_width": 4,
-    "bottom_n_labels": 8,
-    "bottom_n_entities": 12,
-    "min_entity_count": 1
+    "num_queries_per_entity": 4,
+    "num_queries_per_labels": 4,
+    "n_labels": 5,
+    "n_entities": 0.1,
+    "entities_cap": 128
   }
 }

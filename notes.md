@@ -25,8 +25,18 @@
 
 
 ```bash
-CUDA_VISIBLE_DEVICES=1 vllm serve google/gemma-3-12b-it --gpu-memory-utilization 0.85 --port 8124 --max-model-len 16k
+CUDA_VISIBLE_DEVICES=0 vllm serve google/gemma-3-12b-it --gpu-memory-utilization 0.85 --port 8124 --max-model-len 16k
+
+CUDA_VISIBLE_DEVICES=0 vllm serve unsloth/Llama-3.2-3B-Instruct --gpu-memory-utilization 0.5 --port 8125 --max-model-len 16k
 
 CUDA_VISIBLE_DEVICES=1 vllm serve mistralai/Mistral-Small-3.1-24B-Instruct-2503 --gpu-memory-utilization 0.85 --port 8124 --max-model-len 16k
 
 ```
+
+## Query Expansion
+1. under discovered entities 
+- prompt intuition:
+    - depth -> sub topics relating to the grounding entity
+        - hints: none
+    - width: parallel entities ->  (same label, same parent policy, same sector, etc.)
+        - hints:  
