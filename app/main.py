@@ -17,7 +17,92 @@ CONFIG_PATH = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape
 # Number of full pipeline iterations (search → scrape → topics → expand)
 NUM_ITERATIONS = 3
 # Initial root query for the first crawl
-INITIAL_QUERY = "Singapore"
+INITIAL_QUERY = [
+    "Lee Kuan Yew biography and contributions",
+    "Tharman Shanmugaratnam policy influence",
+    "Goh Chok Tong economic reforms",
+    "Halimah Yacob leadership and presidency",
+    "S R Nathan legacy",
+    "Ho Ching and Temasek Holdings",
+    "Ong Teng Cheong public service contributions",
+    "Changi Airport international reputation",
+    "Sentosa Island attractions and development",
+    "Jurong Island petrochemical hub",
+    "Bukit Timah Nature Reserve biodiversity",
+    "Pulau Ubin conservation and rustic life",
+    "Kampong Glam cultural heritage",
+    "Little India history and community",
+    "Chinatown traditions and events",
+    "Marina Bay Sands significance",
+    "Gardens by the Bay architecture and gardens",
+    "Singapore Zoo wildlife innovation",
+    "National Gallery Singapore art collections",
+    "Singapore Botanic Gardens UNESCO status",
+
+    # Organizations & Structures
+    "People's Action Party PAP history",
+    "Workers' Party Singapore evolution",
+    "Temasek Holdings investment strategies",
+    "GIC sovereign wealth fund Singapore",
+    "Monetary Authority of Singapore MAS role",
+    "Economic Development Board Singapore EDB",
+    "National Environment Agency Singapore NEA",
+    "Urban Redevelopment Authority Singapore URA",
+    "Housing and Development Board HDB history and functions",
+    "Central Provident Fund Board CPF Board",
+    "National Library Board Singapore NLB initiatives",
+
+    # Social & Cultural Topics
+    "Singlish features and origins",
+    "Peranakan culture in Singapore",
+    "Malay community in Singapore",
+    "Indian community Singapore history",
+    "Chinese clan associations Singapore",
+    "Singapore hawker culture",
+    "Singapore MRT system development",
+    "Oral History Centre Singapore",
+    "Operation Coldstore significance",
+    "Singapore National Day Parade evolution",
+
+    # Landmarks & Districts
+    "Esplanade Theatres on the Bay events",
+    "Bishan-Ang Mo Kio Park otters",
+    "Kranji War Memorial history",
+    "Singapore Sports Hub facilities",
+    "Punggol Digital District vision",
+    "Tuas Mega Port expansion",
+    "Sungei Buloh Wetland Reserve",
+
+    # Events & Historical Moments
+    "Separation from Malaysia 1965",
+    "Bukit Ho Swee Fire impact",
+    "Japanese Occupation of Singapore",
+    "Asian Financial Crisis effects on Singapore",
+    "COVID-19 pandemic response Singapore",
+    "Speak Mandarin Campaign milestones",
+    "National Service conscription policy",
+    "Singapore Bicentennial commemorations",
+
+    # Science, Tech and Education
+    "A*STAR research institutes Singapore",
+    "Singapore University of Technology and Design SUTD",
+    "National University of Singapore NUS ranking",
+    "Singapore Science Centre attractions",
+    "Smart Nation initiative Singapore",
+    "Biopolis biomedical research hub",
+    "Infocomm Media Development Authority IMDA Singapore",
+    "Cyber Security Agency of Singapore projects",
+
+    # Media & Literature
+    "Singapore Literature Prize winners",
+    "The Straits Times newspaper history",
+    "Berita Harian Malay newspaper legacy",
+    "Tamil Murasu Tamil community news",
+    "Channel NewsAsia Singapore media landscape",
+    "Mothership Singapore digital media",
+    "Singapore films internationally recognized"
+]
+
 
 async def main():
     # Load pipeline configuration
@@ -35,22 +120,19 @@ async def main():
     # Initialize crawler
     crawler = Crawler(crawler_cfg)
 
-    # Start with the base query
-    current_queries = [INITIAL_QUERY]
-
     for i in range(NUM_ITERATIONS):
         print("=" * 29)
         print(f"====    Iteration {i+1}/{NUM_ITERATIONS}    ====")
         print("=" * 29)
 
         # 1) Crawl: initial or batch
-        if i == 0:
-            q = current_queries[0]
+        if len(INITIAL_QUERY) == 1:
+            q = INITIAL_QUERY[0]
             logger.info(f"Crawling initial query '{q}'...")
             run_links_file = crawler.search_and_store(q)
         else:
-            logger.info(f"Crawling batch queries: {current_queries}...")
-            run_links_file = crawler.search_and_store_batch(current_queries)
+            logger.info(f"Crawling batch queries: {INITIAL_QUERY}...")
+            run_links_file = crawler.search_and_store_batch(INITIAL_QUERY)
 
         # 2) Load discovered links
         logger.info("Loading links for scraping...")
