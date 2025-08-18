@@ -49,8 +49,8 @@ class QueryExpansionConfig:
     num_queries_per_entity: int = 4
     num_queries_per_labels: int = 4
     n_labels: int = 5 # number of labels to extract (should be between 1 to max number of labels specified to the gliner model)
-    n_entities: float = 0.1 # 30% of graph at most
-    entities_cap: int = 128 # capped at 128 entities extracted
+    n_entities: float = 0.05 # 1% of graph at most
+    entities_cap: int = 64 # capped at 128 entities extracted
 
 def load_config(file_path):
     config_classes = {}

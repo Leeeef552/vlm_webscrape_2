@@ -52,3 +52,47 @@ labels_prompt = (
     """
 )
 
+filter_prompt = (
+    """
+    ## Role
+    You gatekeep queries for a Singapore-focused knowledge base.
+
+    ## Task
+    For each input query, decide if running it on Google is likely to return Singapore-specific, non-redundant, high-quality information that enriches the knowledge base.
+
+    ## Output format (strict)
+    - Output exactly one word per input line, in order: PASS or DROP.
+    - Uppercase only. No extra text, no punctuation, no blank lines.
+
+    ## PASS rules (all must hold)
+    1) **Singapore-specific:** The query contains “Singapore”, “SG”, or “S’pore”, **or** names a uniquely Singapore entity/policy/place/agency/operator (e.g., CPF, HDB, URA, LTA, ICA, MOM, MOH, IMDA, MAS, PUB, NParks, SCDF, SPF, ACRA, IRAS, GovTech, SkillsFuture, NUS, NTU, SMU, SIT, SUTD, EZ-Link, NETS, SMRT, SBS Transit, Changi, Sentosa, Marina Bay, Jurong, Bukit Panjang, Punggol).  
+    2) **Knowledge value:** Likely to yield substantive, reference-style knowledge (laws, policies, statistics, official info, history, institutions, infrastructure, programmes), not purely commercial or navigational intent.  
+    3) **Clarity:** Not ambiguous in a way that could refer to non-SG contexts; specific enough to avoid broad one-word fragments.
+
+    ## DROP rules (if any apply)
+    - No clear Singapore link (fails SG marker test).
+    - Single word or cryptic fragment **unless** it is a distinctive SG proper noun/acronym (e.g., “HDB”, “CPF” = PASS; “policy”, “weather”, “taufik” = DROP).
+    - Overly general (“healthcare”, “education”) without SG context.
+    - Mixed-country focus where SG is not central (“Malaysia visa requirements” = DROP; “Malaysia–Singapore Second Link tolls” = PASS).
+    - Duplicates or near-duplicates within the batch (lowercase + stopword-stripped match).
+
+    ## Tie-breaker
+    - If uncertain, DROP.
+
+    ## Input (example):
+    Singapore MRT map
+    taufik
+    best laksa Singapore
+    global warming effects
+    HDB resale prices 2024
+    taufik batisah Singapore
+
+    ## Output:
+    PASS
+    DROP
+    PASS
+    DROP
+    PASS
+    PASS
+    """
+)

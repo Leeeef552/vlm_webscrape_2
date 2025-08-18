@@ -15,7 +15,7 @@ from .utils.utils import load_links
 # Path to the JSON config file
 CONFIG_PATH = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/configs/config.json"
 # Number of full pipeline iterations (search → scrape → topics → expand)
-NUM_ITERATIONS = 1
+NUM_ITERATIONS = 3
 # Initial root query for the first crawl
 INITIAL_QUERY = "Singapore"
 
@@ -90,7 +90,7 @@ async def main():
         # 6) Query expansion
         logger.info("Generating new queries via expansion...")
         expander = QueryExpansion(expand_cfg)
-        current_queries = expander.get_new_queries()
+        current_queries = expander.get_queries(4)
         logger.info(f"Generated {len(current_queries)} queries: {current_queries}")
 
     logger.info("Pipeline run complete.")

@@ -19,6 +19,7 @@ from ..utils.logger import logger
 from ..utils.prompts import (
     entity_prompt,
     labels_prompt,
+    filter_prompt
 )
 from ..configs.config import QueryExpansionConfig
 
@@ -26,6 +27,7 @@ from ..configs.config import QueryExpansionConfig
 # =========================
 # Internal caching helpers
 # =========================
+
 class _GraphCache:
     """Build once, reuse often. Holds graphs, embeddings and derived metrics."""
     __slots__ = (
@@ -72,6 +74,17 @@ class _GraphCache:
             self._load_embeddings()
         return self._emb_list
 
+    @staticmethod
+    def _norm01(vals: Dict[int, float]) -> Dict[int, float]:
+        if not vals:
+            return {}
+        vmin = min(vals.values())
+        vmax = max(vals.values())
+        if vmax == vmin:
+            return {k: 0.0 for k in vals}
+        r = vmax - vmin
+        return {k: (v - vmin) / r for k, v in vals.items()}
+
     def embeddings_arrays(self):
         """Return (eids[np.int64], texts[List[str]], vecs[np.float32 normalized], id2idx[dict])."""
         if self._emb_vecs is None:
@@ -99,9 +112,8 @@ class _GraphCache:
                     G.add_edge(a, b, weight=float(w))
         return G
 
-    def _build_label_graph(
-        self, weighting: str = "npmi", min_pair: int = 2, only_pos: bool = True
-    ) -> nx.Graph:
+
+    def _build_label_graph(self, weighting: str = "npmi", min_pair: int = 2, only_pos: bool = True) -> nx.Graph:
         G = nx.Graph()
         with self.p._conn() as conn:
             cur = conn.cursor()
@@ -308,6 +320,7 @@ class _GraphCache:
         self._emb_vecs = vecs
         self._emb_id2idx = {int(e): i for i, e in enumerate(eids)}
 
+
 class QueryExpansion:
     """Single-source-of-truth implementation with aggressive caching.
     - No duplicated build methods
@@ -352,10 +365,6 @@ class QueryExpansion:
     def _get_embedding_arrays(self):
         return self._cache.embeddings_arrays()
 
-    # ---------- DB ----------
-    def _conn(self):
-        return sqlite3.connect(self.db_path)
-
     @staticmethod
     def _norm01(vals: Dict[int, float]) -> Dict[int, float]:
         if not vals:
@@ -367,18 +376,18 @@ class QueryExpansion:
         r = vmax - vmin
         return {k: (v - vmin) / r for k, v in vals.items()}
     
-    def _llm_generate(
-        self, prompt_template: str, base_query: str, n: int = 4
-    ) -> List[str]:
-        start = time.time()
+    def _llm_generate(self, prompt_template: str, base_query: str, n: Optional[int] = 4) -> List[str]:
         prompt = prompt_template.format(n=n)
         messages = [
             {"role": "system", "content": "You are a Singapore-focused knowledge-expansion assistant."},
             {"role": "user", "content": f"{prompt}\nOriginal Query: \"{base_query}\""},
         ]
         resp = self.client.chat.completions.create(model=self.config.model_name, messages=messages)
-        logger.info(f"Generated queries in {time.time() - start:.2f}s")
         return self._parse_queries(resp.choices[0].message.content or "")
+    
+    # ---------- DB ----------
+    def _conn(self):
+        return sqlite3.connect(self.db_path)
 
     # ==========================================
     # Graph extraction
@@ -580,14 +589,14 @@ class QueryExpansion:
         # final cut to respect absolute cap
         entities = entities[:max_entities]
         logger.info(f"Found all entities in {time.time() - start:.2f}s")
-        logger.info(f"total {len(entities)} unique entities found and {len(labels)} found")
+        logger.info(f"total {len(entities)} unique entities found and {len(labels)} labels found")
         return entities, labels
 
     # ==========================================
     # Query Generation
     # ==========================================
 
-    def generate_queries_concurrent(self, entities: List[Tuple], labels: List[Tuple]) -> Dict[str, List[str]]:
+    def generate_queries(self, entities: List[Tuple], labels: List[Tuple]) -> Dict[str, List[str]]:
         start = time.time()
         all_queries = {"entity_queries": [], "label_queries": []}
         queries_per_entity = self.config.num_queries_per_entity
@@ -669,6 +678,41 @@ class QueryExpansion:
         logger.info(f"Generated {total_entity_queries} entity queries and {total_label_queries} label queries")
         return all_queries
 
+    def _filter_one(self, query: str):
+        """Return the query dict if it passes the filter, else None."""
+        base_query = query["query"]
+        template = filter_prompt
+        messages = [
+            {"role": "system", "content": "You are a Singapore-focused knowledge-expansion assistant."},
+            {"role": "user", "content": f"{template}\nCandidate Query: \"{base_query}\""},
+        ]
+        resp = self.client.chat.completions.create(model=self.config.model_name, messages=messages)
+        if resp.choices[0].message.content == "PASS":
+            return base_query
+
+    def get_queries(self, max_workers: int = 4) -> List[str]:
+        start = time.time()
+        
+        entities, labels = self.get_entities_and_labels()
+        raw = self.generate_queries(entities, labels) 
+        all_queries = raw["entity_queries"] + raw["label_queries"]
+        logger.info(f"Raw expansion queries: {len(all_queries)}")
+        if not all_queries:
+            logger.warning("No expansion queries generated.")
+            return []
+
+        results = []
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            futs = [pool.submit(self._filter_one, q) for q in all_queries]
+            for f in as_completed(futs):
+                kept = f.result()
+                if kept:
+                    results.append(kept)
+
+        logger.info(f"Queries after filtering: {len(results)}")
+        logger.info(f"Original number of queries: {len(all_queries)}")
+        return results
+
     # ==========================================
     # Graph Analysis
     # ==========================================
@@ -694,50 +738,27 @@ class QueryExpansion:
             "average_degree": sum(dict(G.degree()).values()) / G.number_of_nodes(),
         }
     
+
+
 def main():
     start = time.time()
     config = QueryExpansionConfig()
     qe = QueryExpansion(config)
     logger.info("Graphs & metrics warmed.")
 
-    # 1. High-level structure -------------------------------------------------
-    print("\n=== Graph structure ===")
-    structure = qe.analyze_graph_structure()
-    for k, v in structure.items():
-        print(f"   {k}: {v}")
-
-    # 2. Core extraction via get_entities_and_labels --------------------------
-    print("\n=== Extracting entities & labels ===")
-    entities, labels = qe.get_entities_and_labels()
-
-    print(f"\nLabels ({len(labels)}):")
-    for lid, lab, score in labels:
-        print(f"   {lab:<20} (id={lid}, score={score:.3f})")
-
-    print(f"\nTop Entities ({len(entities)}):")
-    for eid, txt, meta in entities[: min(20, len(entities))]:
-        print(f"   ID={eid:<6} {txt[:60]:<60}  meta={meta:.3f}")
-
     # 3. Query generation -----------------------------------------------------
     print("\n=== Generating expansion queries ===")
-    queries = qe.generate_queries_concurrent(entities, labels)
-
-    print(f"\nEntity-based queries ({len(queries['entity_queries'])}):")
-    for q in queries["entity_queries"][:10]:
-        print(f"   [{q['entity_text']}] -> {q['query']}")
-
-    print(f"\nLabel-based queries ({len(queries['label_queries'])}):")
-    for q in queries["label_queries"][:10]:
-        print(f"   [{q['label_text']}] -> {q['query']}")
+    queries = qe.get_queries(4)
+    print(f"\n\n#################### Total {len(queries)} queries ###################### \n\n")
 
     # 4. Persist queries to file (JSONL) -------------------------------------
     out_dir = Path("/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/temp") / "outputs"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / "expansion_queries.jsonl"
     with open(out_file, "w", encoding="utf-8") as f:
-        for q in queries["entity_queries"] + queries["label_queries"]:
+        for q in queries:
             f.write(json.dumps(q, ensure_ascii=False) + "\n")
-    print(f"\nSaved all queries to {out_file}")
+        print(f"\nSaved all filtered queries to {out_file}")
 
     # 5. Timings --------------------------------------------------------------
     logger.info(f"All tests completed in {time.time() - start:.2f}s")

@@ -36,7 +36,7 @@
     "num_queries_per_entity": 4,
     "num_queries_per_labels": 4,
     "n_labels": 5,
-    "n_entities": 0.1,
-    "entities_cap": 128
+    "n_entities": 0.01,
+    "entities_cap": 64
   }
 }
