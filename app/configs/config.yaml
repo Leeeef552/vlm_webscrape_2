@@ -1,0 +1,40 @@
+# Configuration file for web scraping pipeline
+crawler:
+  searxng_url: "http://localhost:3628/search" ## searxng docker localhost url
+  language: "en" # language of sites to return
+  pages: 1  # number of pages to return from the seach result
+  time_range: "year" # date back dated for search results
+  timeout: 3
+  links_file_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/links.jsonl" # file path to for tracking of global seen links 
+
+scraper:
+  concurrency: 8 # number of links to scrape concurrently
+  links_file_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/links.jsonl" 
+  images_dir: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/images_metadata"
+  markdown_dir: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data"
+
+topic_extractor:
+  data_file: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data"
+  gliner_model_name: "gliner-community/gliner_large-v2.5" 
+  gliner_threshold: 0.75 # threshold for gliner to decide if its an expected entity fitting to the label (keep it low, we rely on llm to decide relation to singapore)
+  gliner_labels_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_entity_labels.jsonl" 
+  abbrev_map_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_lexical_labels.json"
+  seed_entities_file: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/classified_entities_filtered_sampled_500.jsonl"
+  concurrency: 16 
+  output_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities/extracted_entities.json"
+  embedding_model: "BAAI/bge-m3"
+  db_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities"
+  cleaner_model_name: "unsloth/Llama-3.2-3B-Instruct" # cleaner model to clean scraped text from website
+  cleaner_base_url: "http://localhost:8125/v1" # vllm url to host the cleaner model 
+  validator_model_name: "google/gemma-3-12b-it" # validator model to validate if entity is sg related
+  validator_base_url: "http://localhost:8124/v1" # vllm url to host the validator model 
+
+query_expansion:
+  db_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities"
+  model_name: "google/gemma-3-12b-it" # query expansion model
+  base_url: "http://localhost:8124/v1"
+  num_queries_per_entity: 8 # number of queries to create per entity
+  num_queries_per_labels: 8
+  n_labels: 8 # recommended to keep this fixed, labels are generally fixed to the labels specified in gliner_labels_path; unless user changes between runs
+  n_entities: 0.05 # proportion of under discovered entities to extract from KB
+  entities_cap: 128 # ceiling to cap num of entities extracted from KB 

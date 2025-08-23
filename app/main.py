@@ -11,100 +11,74 @@ from .core.query_expansion import QueryExpansion
 from .utils.logger import logger
 from .utils.utils import load_links
 
+import time
+
 # === Configuration Variables ===
 # Path to the JSON config file
-CONFIG_PATH = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/configs/config.json"
+CONFIG_PATH = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/configs/config.yaml"
 # Number of full pipeline iterations (search → scrape → topics → expand)
-NUM_ITERATIONS = 3
+NUM_ITERATIONS = 5
 # Initial root query for the first crawl
 INITIAL_QUERY = [
-    "Lee Kuan Yew biography and contributions",
-    "Tharman Shanmugaratnam policy influence",
-    "Goh Chok Tong economic reforms",
-    "Halimah Yacob leadership and presidency",
-    "S R Nathan legacy",
-    "Ho Ching and Temasek Holdings",
-    "Ong Teng Cheong public service contributions",
-    "Changi Airport international reputation",
-    "Sentosa Island attractions and development",
-    "Jurong Island petrochemical hub",
-    "Bukit Timah Nature Reserve biodiversity",
-    "Pulau Ubin conservation and rustic life",
-    "Kampong Glam cultural heritage",
-    "Little India history and community",
-    "Chinatown traditions and events",
-    "Marina Bay Sands significance",
-    "Gardens by the Bay architecture and gardens",
-    "Singapore Zoo wildlife innovation",
-    "National Gallery Singapore art collections",
-    "Singapore Botanic Gardens UNESCO status",
-
-    # Organizations & Structures
-    "People's Action Party PAP history",
-    "Workers' Party Singapore evolution",
-    "Temasek Holdings investment strategies",
-    "GIC sovereign wealth fund Singapore",
-    "Monetary Authority of Singapore MAS role",
-    "Economic Development Board Singapore EDB",
-    "National Environment Agency Singapore NEA",
-    "Urban Redevelopment Authority Singapore URA",
-    "Housing and Development Board HDB history and functions",
-    "Central Provident Fund Board CPF Board",
-    "National Library Board Singapore NLB initiatives",
-
-    # Social & Cultural Topics
-    "Singlish features and origins",
-    "Peranakan culture in Singapore",
-    "Malay community in Singapore",
-    "Indian community Singapore history",
-    "Chinese clan associations Singapore",
-    "Singapore hawker culture",
-    "Singapore MRT system development",
-    "Oral History Centre Singapore",
-    "Operation Coldstore significance",
-    "Singapore National Day Parade evolution",
-
-    # Landmarks & Districts
-    "Esplanade Theatres on the Bay events",
-    "Bishan-Ang Mo Kio Park otters",
-    "Kranji War Memorial history",
-    "Singapore Sports Hub facilities",
-    "Punggol Digital District vision",
-    "Tuas Mega Port expansion",
-    "Sungei Buloh Wetland Reserve",
-
-    # Events & Historical Moments
-    "Separation from Malaysia 1965",
-    "Bukit Ho Swee Fire impact",
-    "Japanese Occupation of Singapore",
-    "Asian Financial Crisis effects on Singapore",
-    "COVID-19 pandemic response Singapore",
-    "Speak Mandarin Campaign milestones",
-    "National Service conscription policy",
-    "Singapore Bicentennial commemorations",
-
-    # Science, Tech and Education
-    "A*STAR research institutes Singapore",
-    "Singapore University of Technology and Design SUTD",
-    "National University of Singapore NUS ranking",
-    "Singapore Science Centre attractions",
-    "Smart Nation initiative Singapore",
-    "Biopolis biomedical research hub",
-    "Infocomm Media Development Authority IMDA Singapore",
-    "Cyber Security Agency of Singapore projects",
-
-    # Media & Literature
-    "Singapore Literature Prize winners",
-    "The Straits Times newspaper history",
-    "Berita Harian Malay newspaper legacy",
-    "Tamil Murasu Tamil community news",
-    "Channel NewsAsia Singapore media landscape",
-    "Mothership Singapore digital media",
-    "Singapore films internationally recognized"
+    "Singapore history and nation-building",
+    "Singapore government and political landscape",
+    "Singapore economic development and industries",
+    "Singapore society and multiculturalism",
+    "Singapore education system and universities",
+    "Singapore arts, literature, and media",
+    "Singapore national heritage and traditions",
+    "Major Singapore landmarks and architecture",
+    "Singapore nature reserves and biodiversity",
+    "Singapore urban planning and sustainability",
+    "Singapore science, research, and technology",
+    "Transportation, mobility, and logistics in Singapore (MRT, buses, airports, seaports)",
+    "Infrastructure and utilities in Singapore (water, energy, waste)",
+    "Singapore’s international relations and global role",
+    "Security, defence, and national service in Singapore",
+    "Social policies and quality of life in Singapore",
+    "Festivals, events, and cultural celebrations in Singapore",
+    "Singapore food, cuisine, and hawker culture",
+    "Tourism and hospitality in Singapore (attractions, hotels, cruises)",
+    "Iconic districts and neighbourhoods in Singapore (Chinatown, Little India, Kampong Glam, Civic District)",
+    "Housing, HDB towns, and real estate in Singapore",
+    "Law, justice, and public administration in Singapore",
+    "Environment, climate action, and conservation in Singapore",
+    "Healthcare system and public health in Singapore",
+    "Demographics, population, and migration in Singapore",
+    "Religion, languages, and cultural harmony in Singapore",
+    "Sports, recreation, and lifestyle in Singapore",
+    "Business, finance, and trade in Singapore (banking, fintech, MAS)",
+    "Startups, innovation, and the digital economy in Singapore (Smart Nation, GovTech)",
+    "Maritime, aviation, and port/airport hubs in Singapore (PSA, Changi)",
+    "Data governance, privacy, and cybersecurity in Singapore",
+    "Labour market, employment, and skills development in Singapore (SkillsFuture)",
+    "Retail, consumer culture, and e-commerce in Singapore",
+    "Media, broadcasting, and telecommunications in Singapore",
+    "Museums, galleries, and performing arts in Singapore",
+    "Urban design, heritage conservation, and place-making in Singapore",
+    "Environmental sustainability in the built environment (green buildings, parks, corridors)",
+    "Education pathways: MOE schools, ITEs, polytechnics, universities",
+    "Civil society, NGOs, and volunteerism in Singapore",
+    "Rural past, kampong heritage, and historical sites in Singapore",
+    "Singapore public and private transport systems",
+    "Singapore hawker culture and street food",
+    "Singapore iconic tourist destinations and hidden gems",
+    "Singapore cultural districts and heritage trails",
+    "Singapore local cuisine, Michelin-starred & heritage stalls",
+    "Singapore nightlife, entertainment, and leisure hubs",
+    "Singapore shopping and fashion scene",
+    "Singapore sports, recreation, and active lifestyle",
+    "Singapore healthcare and biomedical innovation",
+    "Singapore fintech, start-ups, and entrepreneurship ecosystem",
+    "Singapore smart-city initiatives and digital governance",
+    "Singapore green building and eco-tourism",
+    "Singapore religious diversity and places of worship",
+    "Singapore diaspora and overseas communities"
 ]
 
 
 async def main():
+    start = time.time()
     # Load pipeline configuration
     logger.info(f"Loading configurations from {CONFIG_PATH}...")
     config = load_config(CONFIG_PATH)
@@ -120,19 +94,21 @@ async def main():
     # Initialize crawler
     crawler = Crawler(crawler_cfg)
 
+    current_queries = INITIAL_QUERY
+
     for i in range(NUM_ITERATIONS):
         print("=" * 29)
         print(f"====    Iteration {i+1}/{NUM_ITERATIONS}    ====")
         print("=" * 29)
 
         # 1) Crawl: initial or batch
-        if len(INITIAL_QUERY) == 1:
-            q = INITIAL_QUERY[0]
+        if len(current_queries) == 1:
+            q = current_queries[0]
             logger.info(f"Crawling initial query '{q}'...")
             run_links_file = crawler.search_and_store(q)
         else:
-            logger.info(f"Crawling batch queries: {INITIAL_QUERY}...")
-            run_links_file = crawler.search_and_store_batch(INITIAL_QUERY)
+            logger.info(f"Crawling batch queries: {current_queries}...")
+            run_links_file = crawler.search_and_store_batch(current_queries)
 
         # 2) Load discovered links
         logger.info("Loading links for scraping...")
@@ -175,7 +151,7 @@ async def main():
         current_queries = expander.get_queries(4)
         logger.info(f"Generated {len(current_queries)} queries: {current_queries}")
 
-    logger.info("Pipeline run complete.")
+    logger.info(f"Pipeline run complete. Total time taken: {time.time() - start}")
 
 if __name__ == "__main__":
     asyncio.run(main())

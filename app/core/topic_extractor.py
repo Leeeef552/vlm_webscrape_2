@@ -2,18 +2,20 @@ import re
 import json
 import sqlite3
 from pathlib import Path
-from typing import Set, List, Dict, Any
+from typing import Set, List, Dict, Any, Tuple
 from collections import Counter, defaultdict
 from tqdm import tqdm
 from gliner import GLiNER
 from ..configs.config import TopicExtractorConfig
 from ..utils.logger import logger
 import nltk
+import numpy as np
 from nltk.corpus import stopwords
 from rapidfuzz import fuzz
 from copy import deepcopy
-from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer, util
 from openai import OpenAI
+from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from ..utils.utils import mentions_singapore, normalize_text
 
@@ -67,57 +69,81 @@ class TopicExtractor:
     def _init_db(self) -> None:
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
-        # Create tables
+
+        # ----------------------------------------------------------------------
+        # 1. Core tables (labels, entities, embeddings, co-occurrence, coverage)
+        # ----------------------------------------------------------------------
         c.execute("""
         CREATE TABLE IF NOT EXISTS labels (
-          label_id    INTEGER PRIMARY KEY AUTOINCREMENT,
-          label       TEXT NOT NULL UNIQUE
-        )""")
-        c.execute("""
-        CREATE TABLE IF NOT EXISTS entities (
-          entity_id      INTEGER PRIMARY KEY AUTOINCREMENT,
-          label_id       INTEGER NOT NULL,
-          entity_text    TEXT NOT NULL,
-          total_count    INTEGER NOT NULL DEFAULT 0,
-          UNIQUE(label_id, entity_text),
-          FOREIGN KEY(label_id) REFERENCES labels(label_id)
-        )""")
-        c.execute("""
-        CREATE TABLE IF NOT EXISTS embeddings (
-          entity_id   INTEGER PRIMARY KEY,
-          vector      TEXT NOT NULL,
-          FOREIGN KEY(entity_id) REFERENCES entities(entity_id)
-        )""")
-        c.execute("""
-        CREATE TABLE IF NOT EXISTS cooccurrence (
-          entity_a     INTEGER NOT NULL,
-          entity_b     INTEGER NOT NULL,
-          count        INTEGER NOT NULL DEFAULT 0,
-          PRIMARY KEY (entity_a, entity_b),
-          FOREIGN KEY(entity_a) REFERENCES entities(entity_id),
-          FOREIGN KEY(entity_b) REFERENCES entities(entity_id)
-        )""")
-        c.execute("""
-        CREATE TABLE IF NOT EXISTS label_coverage (
-          label_id        INTEGER PRIMARY KEY,
-          docs_with_label INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY(label_id) REFERENCES labels(label_id)
-        )""")
-        c.execute("""
-        CREATE TABLE IF NOT EXISTS metadata (
-          key   TEXT PRIMARY KEY,
-          value TEXT
+            label_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            label    TEXT NOT NULL UNIQUE
         )""")
 
-        conn.commit()
+        # NOTE: the column `is_seed` is new; for fresh DBs it is created here.
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS entities (
+            entity_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+            label_id    INTEGER NOT NULL,
+            entity_text TEXT NOT NULL,
+            total_count INTEGER NOT NULL DEFAULT 0,
+            is_seed     INTEGER NOT NULL DEFAULT 0,
+            UNIQUE(label_id, entity_text),
+            FOREIGN KEY(label_id) REFERENCES labels(label_id)
+        )""")
+
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS embeddings (
+            entity_id INTEGER PRIMARY KEY,
+            vector    TEXT NOT NULL,
+            FOREIGN KEY(entity_id) REFERENCES entities(entity_id)
+        )""")
+
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS cooccurrence (
+            entity_a INTEGER NOT NULL,
+            entity_b INTEGER NOT NULL,
+            count    INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (entity_a, entity_b),
+            FOREIGN KEY(entity_a) REFERENCES entities(entity_id),
+            FOREIGN KEY(entity_b) REFERENCES entities(entity_id)
+        )""")
+
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS label_coverage (
+            label_id        INTEGER PRIMARY KEY,
+            docs_with_label INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY(label_id) REFERENCES labels(label_id)
+        )""")
+
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS metadata (
+            key   TEXT PRIMARY KEY,
+            value TEXT
+        )""")
+
+        # ----------------------------------------------------------------------
+        # 2. One-time schema-upgrade helper: add `is_seed` to old DBs
+        # ----------------------------------------------------------------------
+        try:
+            c.execute("SELECT is_seed FROM entities LIMIT 1")
+        except sqlite3.OperationalError:
+            c.execute("ALTER TABLE entities ADD COLUMN is_seed INTEGER NOT NULL DEFAULT 0")
+
+        # ----------------------------------------------------------------------
+        # 3. Load seed entities (if file provided)
+        # ----------------------------------------------------------------------
+        conn.commit()  # commit schema changes before starting seed load
+
         if self.seed_entities_file and self.seed_entities_file.exists():
             logger.info("Loading seed entities from %s...", self.seed_entities_file)
             try:
                 seed_data = self._load_seed_entities(self.seed_entities_file)
                 self._insert_seed_entities(c, seed_data)
+                conn.commit()
                 logger.info("Seed entities loaded successfully.")
             except Exception as e:
                 logger.error("Error loading seed entities: %s", e)
+                conn.rollback()
         else:
             logger.info("No seed entities file provided or file does not exist.")
 
@@ -152,38 +178,37 @@ class TopicExtractor:
 
     def _insert_seed_entities(self, cursor, seed_data: List[Dict[str, str]]) -> None:
         """
-        Inserts seed entities into the database.
-        Assumes the database connection is open and cursor is active.
+        Insert seed entities preserving their original label and setting is_seed=1.
         """
-        # First, get or create all unique labels
-        unique_labels = list(set(item['label'] for item in seed_data))
-        # Insert labels if they don't exist
-        for label in unique_labels:
-            cursor.execute("INSERT OR IGNORE INTO labels(label) VALUES(?)", (label,))
-        # Get label IDs
-        label_id_map = {}
-        for label in unique_labels:
-            cursor.execute("SELECT label_id FROM labels WHERE label=?", (label,))
-            result = cursor.fetchone()
-            if result:
-                label_id_map[label] = result[0]
-            else:
-                logger.warning(f"Label '{label}' not found after insertion.")
-
-        # Now insert entities
         for item in seed_data:
-            entity_text = item['entity']
-            label = item['label']
-            label_id = label_id_map.get(label)
-            if label_id is None:
-                logger.warning(f"Skipping seed entity '{entity_text}' due to unknown label '{label}'")
-                continue
+            entity_text = item['entity'].strip()
+            label_name  = item['label'].strip()
 
-            # Insert entity (will ignore duplicates based on unique constraint)
+            # 1. Ensure the label exists
+            cursor.execute("INSERT OR IGNORE INTO labels(label) VALUES(?)", (label_name,))
+            cursor.execute("SELECT label_id FROM labels WHERE label=?", (label_name,))
+            label_id = cursor.fetchone()[0]
+
+            # 2. Insert the entity and mark it as seed
+            cursor.execute("""
+                INSERT OR IGNORE INTO entities(label_id, entity_text, total_count, is_seed)
+                VALUES(?, ?, 0, 1)
+            """, (label_id, entity_text))
+
             cursor.execute(
-                "INSERT OR IGNORE INTO entities(label_id, entity_text, total_count) VALUES(?,?,?)",
-                (label_id, entity_text, 1) # Default count to 1 for seed
+                "SELECT entity_id FROM entities WHERE label_id=? AND entity_text=?",
+                (label_id, entity_text)
             )
+            entity_id = cursor.fetchone()[0]
+
+            # 3. Insert embedding if not present yet
+            cursor.execute("SELECT 1 FROM embeddings WHERE entity_id=?", (entity_id,))
+            if cursor.fetchone() is None:
+                vec = json.dumps(self.embedder.encode(entity_text).tolist())
+                cursor.execute(
+                    "INSERT INTO embeddings(entity_id, vector) VALUES(?, ?)",
+                    (entity_id, vec)
+                )
 
 
     def _save_to_db(self, data: Dict[str, Any]) -> None:
@@ -246,6 +271,39 @@ class TopicExtractor:
         conn.commit()
         conn.close()
 
+    @lru_cache(maxsize=1)
+    def _get_seed_entity_vectors(self) -> Tuple[List[str], np.ndarray]:
+        conn = sqlite3.connect(self.db_path)
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT e.entity_text, em.vector
+            FROM entities e
+            JOIN embeddings em ON e.entity_id = em.entity_id
+            WHERE e.is_seed = 1
+        """)
+        rows = cur.fetchall()
+        conn.close()
+
+        if not rows:
+            dim = self.embedder.get_sentence_embedding_dimension()
+            return [], np.empty((0, dim))
+
+        texts, vecs = zip(*rows)
+        return list(texts), np.array([json.loads(v) for v in vecs])
+    
+
+    def _get_all_entity_vectors(self) -> Dict[str, np.ndarray]:
+        conn = sqlite3.connect(self.db_path)
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT e.entity_text, em.vector
+            FROM entities e
+            JOIN embeddings em ON e.entity_id = em.entity_id
+        """)
+        rows = cur.fetchall()
+        conn.close()
+        return {t: np.array(json.loads(v)) for t, v in rows}
+
     ########################################
     #            core functions            #
     ########################################
@@ -301,8 +359,6 @@ class TopicExtractor:
 
                                     # check relevance before adding
                                     matched_entity = self._check_relevance(mapped)
-                                    # check relevance before adding
-                                    matched_entity = self._check_relevance(mapped)
 
                                     if mapped not in relevance_cache:
                                         relevance_cache[mapped] = matched_entity is not None
@@ -355,11 +411,14 @@ class TopicExtractor:
 
         # Compute per-label distribution summing to 100%
         docs_count_by_label = {label: docs_with_label.get(label, 0) for label in merged_counts}
-        coverage_by_label = {
-            label: docs_with_label.get(label, 0) / total_docs
-            for label in merged_counts
-        }
 
+        if total_docs == 0:
+            coverage_by_label = {label: 0.0 for label in merged_counts}
+        else:
+            coverage_by_label = {
+                label: docs_with_label.get(label, 0) / total_docs
+                for label in merged_counts
+            }
         final_output = {
             'counts': merged_counts,
             'embeddings': embeddings,
@@ -388,27 +447,60 @@ class TopicExtractor:
     #           helper functions           #
     ########################################
     
-    def _check_relevance(self, entity: str) -> str:
-        """
-        Checks if the entity matches any seed entity or existing DB entity via fuzzy match.
-        If matched, returns the canonical (seed) version; otherwise returns original.
-        """
+    def _check_relevance(self, entity: str, *, sem_threshold: float = .85) -> str | None:
         entity_lower = entity.lower().strip()
 
-        # Check against seed entities first
-        for seed_entity in self._get_all_seed_entities():
-            if fuzz.ratio(entity_lower, seed_entity.lower()) >= 75:
-                return seed_entity
+        # 1. fuzzy against seed
+        for seed_text in self._get_all_seed_entities():   # cheap list already in RAM
+            if fuzz.ratio(entity_lower, seed_text.lower()) >= 75:
+                logger.debug(f"Fuzzy match found for '{entity}' against seed: '{seed_text}'")
+                return seed_text
 
-        # Then check against existing entities in DB
-        for label, entities in self._get_all_entities().items():
-            for db_entity in entities:
-                if fuzz.ratio(entity_lower, db_entity.lower()) >= 75:
-                    return db_entity
+        # 2. fuzzy against DB entities (no embedding needed)
+        for label, ents in self._get_all_entities().items():
+            for db_ent in ents:
+                if fuzz.ratio(entity_lower, db_ent.lower()) >= 75:
+                    logger.debug(f"Fuzzy match found for '{entity}' against DB entity: '{db_ent}'")
+                    return db_ent
 
-        # Fallback to LLM if nothing matches
+        # 3. semantic similarity using cached vectors
+        try:
+            # encode the candidate only once
+            cand_vec = self.embedder.encode([entity])
+            cand_vec = cand_vec.astype(np.float32)   # force float32
+
+            # start with seed vectors (fast, already cached)
+            seed_texts, seed_vecs = self._get_seed_entity_vectors()
+            seed_vecs = seed_vecs.astype(np.float32)
+            if seed_vecs.shape[0]:
+                sims = util.cos_sim(cand_vec, seed_vecs)[0]
+                best = float(sims.max())
+                if best >= sem_threshold:
+                    matched_text = seed_texts[int(sims.argmax())]
+                    logger.info(f"Semantic match found for '{entity}' against seed: '{matched_text}' (similarity: {best:.3f})")
+                    return matched_text
+
+            # widen to *all* entities (seed + extracted)
+            all_vecs = self._get_all_entity_vectors()
+            if not all_vecs:
+                raise ValueError("No vectors in DB")
+
+            texts, vecs = zip(*all_vecs.items())
+            vecs = np.stack(vecs).astype(np.float32)
+            sims = util.cos_sim(cand_vec, np.stack(vecs))[0]
+            best = float(sims.max())
+            if best >= sem_threshold:
+                matched_text = texts[int(sims.argmax())]
+                logger.info(f"Semantic match found for '{entity}' against DB entity: '{matched_text}' (similarity: {best:.3f})")
+                return matched_text
+
+        except Exception as e:
+            logger.warning("Semantic check failed for '%s': %s", entity, e)
+
+        # 4. LLM fallback (unchanged)
         messages = [
-            {"role": "system", "content": "You are given an entity in the form of a phrase, topic or word. Respond with 'yes' or 'no' depending on whether the entity is related to Singapore in any way."},
+            {"role": "system",
+            "content": "You are given an entity phrase. Reply 'yes' or 'no' depending on whether it is related to Singapore."},
             {"role": "user", "content": entity}
         ]
         resp = self.cleaner_client.chat.completions.create(
@@ -417,11 +509,13 @@ class TopicExtractor:
             n=3,
             temperature=0.7
         )
-        responses = [choice.message.content.strip().lower() for choice in resp.choices]
-        if responses.count("yes") > responses.count("no"):
-            return entity  # Keep original if LLM says yes
+        yes_votes = sum(1 for c in resp.choices if c.message.content.strip().lower().startswith("yes"))
+        result = entity if yes_votes > 1 else None
+        if result is not None:
+            logger.debug(f"LLM fallback returned positive match for '{entity}'")
         else:
-            return None  # Discard if LLM says no
+            logger.debug(f"LLM fallback returned no match for '{entity}'")
+        return result
 
     
     def _get_all_seed_entities(self) -> List[str]:
@@ -562,6 +656,7 @@ class TopicExtractor:
 def main() -> None:
     config = TopicExtractorConfig()
     extractor = TopicExtractor(config)
+    print("Seed entities in DB:", extractor._get_all_seed_entities())
     stats = extractor.extract_from_file()
     print(f"Total unique entities found: {stats['total_entities']}")
     print(f"Processed documents: {stats['total_docs']}")
