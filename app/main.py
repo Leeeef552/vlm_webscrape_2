@@ -101,31 +101,36 @@ async def main():
         print(f"====    Iteration {i+1}/{NUM_ITERATIONS}    ====")
         print("=" * 29)
 
-        # 1) Crawl: initial or batch
+        # 1) WEB SEARCH -----------------------------------------------------
         if len(current_queries) == 1:
             q = current_queries[0]
-            logger.info(f"Crawling initial query '{q}'...")
-            run_links_file = crawler.search_and_store(q)
+            logger.info("Crawling web (general) for single query: %s", q)
+            run_links_file = crawler.search_and_store(q)          # web only
         else:
-            logger.info(f"Crawling batch queries: {current_queries}...")
-            run_links_file = crawler.search_and_store_batch(current_queries)
+            logger.info("Crawling web (general) for %d queries", len(current_queries))
+            run_links_file = crawler.search_and_store_batch(current_queries)  # web only
 
-        # 2) Load discovered links
-        logger.info("Loading links for scraping...")
-
-        scraper_cfg.links_file_path = run_links_file
+        # 2) IMAGE SEARCH ---------------------------------------------------
+        if len(current_queries) == 1:
+            q = current_queries[0]
+            logger.info("Crawling IMAGES for single query: %s", q)
+            crawler.search_and_store_images(q)                    # images only
+        else:
+            logger.info("Crawling IMAGES for %d queries", len(current_queries))
+            run_links_file = crawler.search_and_store_images_batch(current_queries, run_links_file)  # images only
         
-
+        # 3) Scraping Content From Links -----------------------------------
+        logger.info("Loading links for scraping...")
+        scraper_cfg.links_file_path = run_links_file
         links = load_links(scraper_cfg.links_file_path)
 
-        # 3) Scrape content
         logger.info(f"Scraping {len(links)} links with concurrency={scraper_cfg.concurrency}...")
         async with Scraper(scraper_cfg) as scraper:
             out = await scraper.extract_all_content(links)
             images = out["images"]
             markdowns = out["markdowns"]
             
-        # 4) Save scraped outputs
+        # 4) Save Scraped Outputs ------------------------------------------
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         img_file = Path(scraper_cfg.images_dir) / f"images_metadata_{ts}.json"
         md_file = Path(scraper_cfg.markdown_dir) / f"text_markdown_{ts}.json"
@@ -136,7 +141,7 @@ async def main():
         with open(md_file, "w", encoding="utf-8") as f:
             json.dump(markdowns, f, ensure_ascii=False, indent=2)
 
-        # 5) Topic extraction
+        # 5) Topic extraction ----------------------------------------------
         logger.info("Extracting topics from markdown output...")
         topic_cfg.data_file = str(md_file)
         extractor = TopicExtractor(topic_cfg)
@@ -145,7 +150,7 @@ async def main():
         for label, count in sorted(stats['counts_by_label'].items(), key=lambda x: x[1], reverse=True):
             logger.info(f"  {label}: {count}")
 
-        # 6) Query expansion
+        # 6) Query expansion -----------------------------------------------
         logger.info("Generating new queries via expansion...")
         expander = QueryExpansion(expand_cfg)
         current_queries = expander.get_queries(4)
