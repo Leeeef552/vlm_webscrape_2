@@ -4,15 +4,17 @@ crawler:
   language: "en" # language of sites to return
   pages: 1  # number of pages to return from the seach result
   time_range: "year" # date back dated for search results
-  timeout: 3
+  timeout: 15 # increase if you face timeout error
   links_file_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/links.jsonl" # file path to for tracking of global seen links 
-  concurrency: 8
+  concurrency: 8 # concurrency should be balanced with timeout, higher concurrency will need more timeout 
 
 scraper:
   concurrency: 8 # number of links to scrape concurrently
   links_file_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/links.jsonl" 
   images_dir: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/images_metadata"
   markdown_dir: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data"
+  validator_model_name: "google/gemma-3-12b-it" # validator model to validate if url is sg related
+  validator_base_url: "http://localhost:8124/v1" # vllm url to host the validator model
 
 topic_extractor:
   data_file: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data"

@@ -20,6 +20,8 @@ class ScraperConfig:
     links_file_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/links.jsonl"
     images_dir: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/images_metadata"
     markdown_dir: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data"
+    validator_model_name: str = "google/gemma-3-12b-it"
+    validator_base_url: str = "http://localhost:8124/v1"
 
 @dataclass
 class TopicExtractorConfig:

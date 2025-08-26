@@ -19,6 +19,8 @@ from openai import OpenAI, BadRequestError
 from tqdm import tqdm
 from tqdm.asyncio import tqdm_asyncio   # pip install tqdm>=4.62
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 
 class TextExtractor:
     """Handles text extraction from HTML elements."""
@@ -234,6 +236,103 @@ class ImageValidator:
         return False
 
 
+class SingaporeFilterSync:
+    def __init__(self, base_url: str, model_name: str, max_workers: int = 16):
+        self.client = OpenAI(
+            base_url=base_url,
+            api_key="dummy"
+        )
+        self.model_name = model_name
+        self.max_workers = max_workers
+
+    def _is_singapore_related(self, entry: Dict[str, Any]) -> bool:
+            title = entry.get("title", "").strip()
+            href = entry.get("href", "").strip()
+            content = entry.get("content", entry.get("description", "")).strip()
+            prompt = f"Title: {title}\nURL: {href}\nSnippet: {content}"
+
+            system = (
+                "You are given the title, URL, and a short snippet of a web page. "
+                "Reply 'yes' or 'no' depending on whether it is related to Singapore. "
+                "Only reply 'no' if you are certain it is unrelated to Singapore, "
+                "be it directly or indirectly. If unsure, say 'yes'."
+            )
+
+            resp = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": prompt}
+                ],
+                n=3,
+                temperature=0.3,
+                max_tokens=1,
+            )
+
+            yes_votes = sum(
+                1 for c in resp.choices
+                if c.message.content.strip().lower().startswith("yes")
+            )
+            return yes_votes > 1
+
+    def filter_entries(self, file_path: str) -> List[str]:
+        entries: List[Dict[str, Any]] = []
+        try:
+            with open(file_path, "r", encoding="utf-8") as file:
+                for line in file:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        data = json.loads(line)
+                        # Ensure the required keys exist
+                        if "href" not in data or "title" not in data:
+                            logger.error(
+                                f"Missing 'href' or 'title' in line: {line}"
+                            )
+                            continue
+                        entry = {
+                            "title": data["title"],
+                            "href": data["href"],
+                            "content": data.get("content") or data.get("description", ""),
+                        }
+                        entries.append(entry)
+                    except json.JSONDecodeError as e:
+                        logger.error(f"{e}: Invalid JSON line in: {file_path} at {line}")
+        except FileNotFoundError as e:
+            logger.error(f"{e}: JSONL file not found: {file_path}")
+            return []
+
+        if not entries:
+            return []
+
+        filtered: List[Dict[str, Any]] = []
+
+        with ThreadPoolExecutor(max_workers=self.max_workers) as pool:
+            future_to_entry = {
+                pool.submit(self._is_singapore_related, entry): entry
+                for entry in entries
+            }
+            for future in tqdm(
+                as_completed(future_to_entry),
+                total=len(entries),
+                desc="Singapore relevance check",
+            ):
+                entry = future_to_entry[future]
+                try:
+                    if future.result():
+                        filtered.append(entry)
+                except Exception as exc:
+                    logger.error("LLM call failed for entry %s: %s", entry, exc)
+
+        logger.info(
+            "Kept %s/%s entries after Singapore filter", len(filtered), len(entries)
+        )
+
+        # Return only the href strings
+        return [entry["href"] for entry in filtered]
+
+
 class Scraper:
     """Extract image and markdown content using async Playwright and asyncio."""
     def __init__(self, ScraperConfig):
@@ -259,27 +358,6 @@ class Scraper:
             await self._pw.stop()
 
     # --------------------- Internal helpers ----------------------------
-    
-    def _load_links_from_jsonl(self, file_path: str) -> None:
-        """Load all 'href' values from a JSONL file."""
-        try:
-            with open(file_path, "r", encoding="utf-8") as file:
-                for line_number, line in enumerate(file, 1):
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        data = json.loads(line)
-                        if "href" in data:
-                            self.links.append(data["href"])
-                        else:
-                            print(f"[Line {line_number}] Missing 'href' key: {line}")
-                    except json.JSONDecodeError as e:
-                        print(f"[Line {line_number}] Invalid JSON: {e}")
-        except FileNotFoundError:
-            raise FileNotFoundError(f"Links file not found: {file_path}")
-        except Exception as e:
-            raise RuntimeError(f"Failed to read links file: {e}")
 
     @staticmethod
     def _canonicalise_url(url: str) -> str:
@@ -512,6 +590,15 @@ class Scraper:
         return {"images": images, "markdown": markdown_data}
 
     async def extract_all_content(self, urls: List[str]) -> Dict[str, List[Any]]:
+        filterer = SingaporeFilterSync(
+            base_url=self.scraper_config.validator_base_url,
+            model_name=self.scraper_config.validator_model_name,
+            max_workers=self.scraper_config.concurrency
+        )
+
+        logger.info("Running Singapore-relevance filter")
+        filtered_entries = await asyncio.to_thread(filterer.filter_entries, urls)
+
         # 1. create a semaphore that limits concurrent fetches
         semaphore = asyncio.Semaphore(self.scraper_config.concurrency)
 
@@ -532,7 +619,7 @@ class Scraper:
 
         # 3. run all tasks concurrently with an async progress bar
         results = await tqdm_asyncio.gather(
-            *(extract_safe(u) for u in urls),
+            *(extract_safe(u) for u in filtered_entries),
             desc="Scraping URLs",
             unit="url",
         )

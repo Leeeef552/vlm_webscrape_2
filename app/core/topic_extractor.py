@@ -497,17 +497,23 @@ class TopicExtractor:
         except Exception as e:
             logger.warning("Semantic check failed for '%s': %s", entity, e)
 
+        context = (
+            "You are given an entity phrase. Reply 'yes' or 'no' depending on whether it is related to Singapore."
+            "Only reply no if you are certain it is unrelated to Singapore, be it directly or indirectly."
+            "If you are unsure, say yes."
+        )
+
         # 4. LLM fallback (unchanged)
         messages = [
             {"role": "system",
-            "content": "You are given an entity phrase. Reply 'yes' or 'no' depending on whether it is related to Singapore."},
+            "content": context},
             {"role": "user", "content": entity}
         ]
         resp = self.cleaner_client.chat.completions.create(
             model=self.config.cleaner_model_name,
             messages=messages,
             n=3,
-            temperature=0.7
+            temperature=0.6
         )
         yes_votes = sum(1 for c in resp.choices if c.message.content.strip().lower().startswith("yes"))
         result = entity if yes_votes > 1 else None

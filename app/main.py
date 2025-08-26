@@ -9,7 +9,6 @@ from .core.scraper import Scraper
 from .core.topic_extractor import TopicExtractor
 from .core.query_expansion import QueryExpansion
 from .utils.logger import logger
-from .utils.utils import load_links
 
 import time
 
@@ -122,11 +121,11 @@ async def main():
         # 3) Scraping Content From Links -----------------------------------
         logger.info("Loading links for scraping...")
         scraper_cfg.links_file_path = run_links_file
-        links = load_links(scraper_cfg.links_file_path)
+        # links = load_links(scraper_cfg.links_file_path) # 
 
-        logger.info(f"Scraping {len(links)} links with concurrency={scraper_cfg.concurrency}...")
+        logger.info(f"Scraping links with concurrency={scraper_cfg.concurrency}...")
         async with Scraper(scraper_cfg) as scraper:
-            out = await scraper.extract_all_content(links)
+            out = await scraper.extract_all_content(scraper_cfg.links_file_path)
             images = out["images"]
             markdowns = out["markdowns"]
             

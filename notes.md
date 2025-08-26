@@ -3,6 +3,14 @@
 - image deduplication
 - kb builder
 
+## Searxng
+
+1. make sure docker run on correct port
+2. make sure settings.yml uses json as output
+3. settings.yml must be correct else docker container wont run (common failure is language settings)
+4. can configure the search engines and safe searches in settings.yml
+5. every change in settings.yml must restart container
+
 
 ## overall:
 1. query rewrite with LLM
