@@ -13,6 +13,7 @@ scraper:
   links_file_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/links.jsonl" 
   images_dir: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/images_metadata"
   markdown_dir: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data"
+  pdf_dir:  "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/pdf_data"
   validator_model_name: "google/gemma-3-12b-it" # validator model to validate if url is sg related
   validator_base_url: "http://localhost:8124/v1" # vllm url to host the validator model
 

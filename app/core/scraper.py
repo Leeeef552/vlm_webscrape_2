@@ -20,6 +20,9 @@ from tqdm import tqdm
 from tqdm.asyncio import tqdm_asyncio   # pip install tqdm>=4.62
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import requests
+from pathlib import Path
+import aiofiles
 
 
 class TextExtractor:
@@ -342,6 +345,7 @@ class Scraper:
         self.browser: Optional[Browser] = None
         self.scraper_config = ScraperConfig
         self.semaphore = asyncio.Semaphore(self.scraper_config.concurrency)
+        self.pdf_dir = self.scraper_config.pdf_dir
 
     async def __aenter__(self) -> Scraper:
         self._pw = await async_playwright().start()
@@ -377,34 +381,75 @@ class Scraper:
             return int(m.group(1)), int(m.group(2))
         return 0, 0
 
-    async def _click_load_more(self, page) -> None:
-        """Async click any “load more / show more” buttons until none remain."""
-        selectors = [
-            'button:has-text("load more")',
-            'button:has-text("show more")',
-            'a:has-text("load more")',
-            'a:has-text("show more")',
-        ]
-        clicks = 0
-        max_clicks = 2
-        for _ in range(max_clicks):
-            found = False
-            for sel in selectors:
-                locator = page.locator(sel)
-                count = await locator.count()
-                if count:
-                    try:
-                        await locator.first.wait_for(state="visible", timeout=3000)
-                        await locator.first.scroll_into_view_if_needed()
-                        await locator.first.click()
-                        clicks += 1
-                        found = True
-                        await page.wait_for_timeout(1000)
-                        break
-                    except Exception:
-                        continue
-            if not found:
-                break
+    @staticmethod
+    def _is_likely_pdf_url(url: str) -> bool:
+        """Improved heuristic to detect likely PDF URLs."""
+        url_lower = url.lower()
+        parsed = urlsplit(url_lower)
+
+        # Case 1: Ends with .pdf
+        if parsed.path.endswith(".pdf"):
+            return True
+
+        # Case 2: Contains 'pdf' in path or query (e.g., /viewcontent.cgi?article=...&context=...)
+        if "pdf" in parsed.path or "pdf" in parsed.query:
+            return True
+
+        # Case 3: Known academic repository patterns
+        if re.search(r"\b(viewcontent|article)\.cgi\?", parsed.path):
+            # Common in ERIC, institutional repos
+            return True
+
+        # Case 4: Attachment or download indicators
+        if re.search(r"\b(attachment|download|file|document)\b", parsed.path):
+            return True
+
+        return False
+
+    @staticmethod
+    def _confirm_pdf_url(url: str, timeout: int = 10) -> bool:
+        """Confirm URL serves a PDF using HEAD, then GET with byte sniffing if needed."""
+        # Try HEAD first
+        try:
+            r = requests.head(url, allow_redirects=True, timeout=timeout, stream=True)
+            content_type = r.headers.get("Content-Type", "").lower()
+            if "application/pdf" in content_type:
+                return True
+            # Some misconfigured servers
+            if "octet-stream" in content_type and "pdf" in r.headers.get("Content-Disposition", "").lower():
+                return True
+        except Exception:
+            pass  # Proceed to GET fallback
+
+        # Fallback: GET first 1024 bytes and sniff magic number
+        try:
+            r = requests.get(url, headers={"Range": "bytes=0-1023"}, stream=True, timeout=timeout)
+            r.raise_for_status()
+            chunk = r.raw.read(1024)
+            if chunk.startswith(b"%PDF"):
+                return True
+        except Exception:
+            pass
+
+        return False
+
+    def _filter_pdf_urls(self, urls: list[str]) -> list[str]:
+        """Filter and confirm PDF URLs concurrently."""
+        likely_pdfs = [u for u in urls if self._is_likely_pdf_url(u)]
+        confirmed: list[str] = []
+
+        with ThreadPoolExecutor(max_workers=self.scraper_config.concurrency) as pool:
+            futures = {pool.submit(self._confirm_pdf_url, u): u for u in likely_pdfs}
+            
+            # Use tqdm to show progress bar
+            for future in tqdm(as_completed(futures), total=len(futures), desc="PDF documents check"):
+                url = futures[future]
+                try:
+                    if future.result():
+                        confirmed.append(url)
+                except Exception:
+                    continue
+        return confirmed
 
     async def _fetch_page_content(self, url: str) -> Optional[BeautifulSoup]:
         """Render a URL in a fresh context, then return its BeautifulSoup asynchronously."""
@@ -426,12 +471,6 @@ class Scraper:
                 except asyncio.TimeoutError:
                     logger.error("Timeout navigating to %s", url)
                     return None
-    
-                # Add timeout for load more button clicking
-                try:
-                    await asyncio.wait_for(self._click_load_more(page), timeout=10.0)
-                except asyncio.TimeoutError:
-                    logger.warning("Timeout clicking load more buttons on %s", url)
                 
                 last_h = -1
                 start_time = time.time()
@@ -590,44 +629,65 @@ class Scraper:
         return {"images": images, "markdown": markdown_data}
 
     async def extract_all_content(self, urls: List[str]) -> Dict[str, List[Any]]:
+        # 1) Singapore filter
         filterer = SingaporeFilterSync(
             base_url=self.scraper_config.validator_base_url,
             model_name=self.scraper_config.validator_model_name,
-            max_workers=self.scraper_config.concurrency
+            max_workers=self.scraper_config.concurrency,
         )
-
         logger.info("Running Singapore-relevance filter")
-        filtered_entries = await asyncio.to_thread(filterer.filter_entries, urls)
+        sg_urls = await asyncio.to_thread(filterer.filter_entries, urls)
 
-        # 1. create a semaphore that limits concurrent fetches
+        # 2) Detect PDF URLs
+        logger.info("Running Filter for PDF docs")
+        pdf_urls = await asyncio.to_thread(self._filter_pdf_urls, sg_urls)
+        html_urls = [u for u in sg_urls if u not in pdf_urls]
+        logger.info("PDF documents filtered: %d / %d", len(pdf_urls), len(sg_urls))
+
+        # 3) Persist PDF metadata
+        if pdf_urls:
+            pdf_path = Path(self.scraper_config.pdf_dir)
+            pdf_path.mkdir(parents=True, exist_ok=True)
+            metadata_file = pdf_path / "metadata.jsonl"
+
+            async with aiofiles.open(metadata_file, "a") as f:
+                for url in pdf_urls:
+                    await f.write(
+                        json.dumps(
+                            {
+                                "url": url,
+                                "scraped_at": datetime.now(timezone.utc).isoformat() + "Z",
+                            }
+                        )
+                        + "\n"
+                    )
+
+        # 4) Scrape non-PDF URLs
         semaphore = asyncio.Semaphore(self.scraper_config.concurrency)
 
-        # 2. each URL gets its own task wrapped in a global timeout
         async def extract_safe(url: str) -> Dict[str, Any]:
-            async with semaphore:  # keeps concurrency in check
+            async with semaphore:
                 try:
                     return await asyncio.wait_for(
-                        self._extract_both_from_url(url),
-                        timeout=90  # <-- overall task timeout
+                        self._extract_both_from_url(url), timeout=90
                     )
-                except asyncio.TimeoutError:
-                    logger.error("Global timeout for %s", url)
-                    return {"images": [], "markdown": {}}
                 except Exception as e:
                     logger.error("Failed %s: %s", url, e)
                     return {"images": [], "markdown": {}}
+                
+        logger.info("Begin Scraping of %d HTML sites", len(html_urls))
+        if html_urls:
+            results = await tqdm_asyncio.gather(
+                *(extract_safe(u) for u in html_urls),
+                desc="Scraping URLs",
+                unit="url",
+            )
+        else:
+            results = []
 
-        # 3. run all tasks concurrently with an async progress bar
-        results = await tqdm_asyncio.gather(
-            *(extract_safe(u) for u in filtered_entries),
-            desc="Scraping URLs",
-            unit="url",
-        )
-
-        # 4. flatten results
-        all_images = []
-        all_markdowns = []
+        all_images, all_markdowns = [], []
         for res in results:
             all_images.extend(res["images"])
             all_markdowns.append(res["markdown"])
-        return {"images": all_images, "markdowns": all_markdowns}
+
+        return {"images": all_images, "markdowns": all_markdowns, "pdfs": [{"url": u} for u in pdf_urls]}
