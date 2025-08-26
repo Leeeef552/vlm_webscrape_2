@@ -12,6 +12,7 @@ class CrawlerConfig:
     timeout: int = 4
     links_file_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/global_links.jsonl"
     searxng_url: str = "http://localhost:3628/"
+    concurrency: int = 8
 
 @dataclass
 class ScraperConfig:
@@ -47,6 +48,7 @@ class QueryExpansionConfig:
     n_labels: int = 5 # number of labels to extract (should be between 1 to max number of labels specified to the gliner model)
     n_entities: float = 0.05 # 1% of graph at most
     entities_cap: int = 64 # capped at 128 entities extracted
+    queries_file_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/queries.text"
 
 def load_config(file_path):
     config_classes = {}

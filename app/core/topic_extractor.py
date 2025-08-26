@@ -447,7 +447,7 @@ class TopicExtractor:
     #           helper functions           #
     ########################################
     
-    def _check_relevance(self, entity: str, *, sem_threshold: float = .85) -> str | None:
+    def _check_relevance(self, entity: str, *, sem_threshold: float = .95) -> str | None:
         entity_lower = entity.lower().strip()
 
         # 1. fuzzy against seed

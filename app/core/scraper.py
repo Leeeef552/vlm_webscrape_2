@@ -17,6 +17,8 @@ from ..configs.config import ScraperConfig
 from ..utils.logger import logger
 from openai import OpenAI, BadRequestError
 from tqdm import tqdm
+from tqdm.asyncio import tqdm_asyncio   # pip install tqdm>=4.62
+import time
 
 class TextExtractor:
     """Handles text extraction from HTML elements."""
@@ -341,23 +343,62 @@ class Scraper:
             )
             page = await context.new_page()
             try:
-                await page.goto(url, wait_until="domcontentloaded", timeout=15000)
-                await self._click_load_more(page)
+                try:
+                    await page.goto(url, wait_until="domcontentloaded", timeout=15000)
+                except asyncio.TimeoutError:
+                    logger.error("Timeout navigating to %s", url)
+                    return None
+    
+                # Add timeout for load more button clicking
+                try:
+                    await asyncio.wait_for(self._click_load_more(page), timeout=10.0)
+                except asyncio.TimeoutError:
+                    logger.warning("Timeout clicking load more buttons on %s", url)
+                
                 last_h = -1
-                for _ in range(20):
-                    h = await page.evaluate("document.body.scrollHeight")
+                start_time = time.time()
+                max_scroll_time = 20  # seconds
+
+                for _ in range(10):
+                    if time.time() - start_time > max_scroll_time:
+                        break
+
+                    # Add timeout for scroll height evaluation
+                    try:
+                        h = await asyncio.wait_for(
+                            page.evaluate("document.body.scrollHeight"), 
+                            timeout=5.0
+                        )
+                    except asyncio.TimeoutError:
+                        logger.warning("Timeout evaluating scroll height on %s", url)
+                        break
+                    
                     if h == last_h:
                         break
                     last_h = h
-                    await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                    await page.wait_for_timeout(1500)
-                html = await page.content()
+
+                    # Add timeout for scroll operation
+                    try:
+                        await asyncio.wait_for(
+                            page.evaluate("window.scrollTo(0, document.body.scrollHeight)"),
+                            timeout=5.0
+                        )
+                    except asyncio.TimeoutError:
+                        logger.warning("Timeout scrolling on %s", url)
+                        break
+
+                    # Add timeout for getting page content
+                    try:
+                        html = await asyncio.wait_for(page.content(), timeout=10.0)
+                    except asyncio.TimeoutError:
+                        logger.error("Timeout getting content from %s", url)
+                        return None
+                    
             except Exception as e:
                 logger.error("Failed to fetch %s: %s", url, e)
                 html = None
             finally:
                 await context.close()
-
         return BeautifulSoup(html, "html.parser") if html else None
         
     # .........................Extraction logic ...........................
@@ -470,33 +511,36 @@ class Scraper:
 
         return {"images": images, "markdown": markdown_data}
 
-    # New batch method
     async def extract_all_content(self, urls: List[str]) -> Dict[str, List[Any]]:
-        """Extract both images and markdown for all URLs concurrently"""
-        # logger.info(f"Extracting content from {len(urls)} URLs")
-        
-        # Create shared progress bar
-        pbar = tqdm(total=len(urls), desc="Scraping URLs", unit="url")
-        
-        async def extract_with_progress(url: str) -> Dict[str, Any]:
-            try:
-                result = await self._extract_both_from_url(url)
-                return result
-            finally:
-                pbar.update(1)
-        
-        tasks = [extract_with_progress(u) for u in urls]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        pbar.close()
-        
-        # Separate results
+        # 1. create a semaphore that limits concurrent fetches
+        semaphore = asyncio.Semaphore(self.scraper_config.concurrency)
+
+        # 2. each URL gets its own task wrapped in a global timeout
+        async def extract_safe(url: str) -> Dict[str, Any]:
+            async with semaphore:  # keeps concurrency in check
+                try:
+                    return await asyncio.wait_for(
+                        self._extract_both_from_url(url),
+                        timeout=90  # <-- overall task timeout
+                    )
+                except asyncio.TimeoutError:
+                    logger.error("Global timeout for %s", url)
+                    return {"images": [], "markdown": {}}
+                except Exception as e:
+                    logger.error("Failed %s: %s", url, e)
+                    return {"images": [], "markdown": {}}
+
+        # 3. run all tasks concurrently with an async progress bar
+        results = await tqdm_asyncio.gather(
+            *(extract_safe(u) for u in urls),
+            desc="Scraping URLs",
+            unit="url",
+        )
+
+        # 4. flatten results
         all_images = []
         all_markdowns = []
         for res in results:
-            if isinstance(res, Exception):
-                logger.error(f"Extraction failed: {res}")
-                continue
             all_images.extend(res["images"])
             all_markdowns.append(res["markdown"])
-        
         return {"images": all_images, "markdowns": all_markdowns}

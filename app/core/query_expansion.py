@@ -711,6 +711,12 @@ class QueryExpansion:
 
         logger.info(f"Queries after filtering: {len(results)}")
         logger.info(f"Original number of queries: {len(all_queries)}")
+        
+        queries_file_path = self.config.queries_file_path
+        with open(queries_file_path, "w", encoding="utf-8") as f:
+            for query in results:
+                f.write(query + "\n")
+        logger.info(f"Saved {len(results)} queries to {queries_file_path}")
         return results
 
     # ==========================================

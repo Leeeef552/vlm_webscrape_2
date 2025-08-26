@@ -6,6 +6,7 @@ crawler:
   time_range: "year" # date back dated for search results
   timeout: 3
   links_file_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/links.jsonl" # file path to for tracking of global seen links 
+  concurrency: 8
 
 scraper:
   concurrency: 8 # number of links to scrape concurrently
@@ -38,3 +39,4 @@ query_expansion:
   n_labels: 5 # recommended to keep this fixed, labels are generally fixed to the labels specified in gliner_labels_path; unless user changes between runs
   n_entities: 0.01 # proportion of under discovered entities to extract from KB
   entities_cap: 64 # ceiling to cap num of entities extracted from KB 
+  queries_file_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/queries.text"

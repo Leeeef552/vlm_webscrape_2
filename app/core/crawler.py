@@ -6,6 +6,9 @@ from datetime import datetime
 from ..configs.config import CrawlerConfig
 from ..utils.logger import logger
 from typing import Optional
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Optional, List
 
 
 class Crawler:
@@ -34,6 +37,8 @@ class Crawler:
                             self.seen_urls.add(url)
                     except json.JSONDecodeError:
                         logger.warning("Skipping malformed JSON line in master file.")
+        self.lock = threading.Lock()
+        self.concurrency = self.crawler_config.concurrency
 
     def _make_run_filename(self, prefix: str) -> str:
         ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
@@ -141,204 +146,304 @@ class Crawler:
             logger.info("Empty image results for query=%r page=%d.", query, page)
         return results
 
-    def search_and_store(self, query: str) -> str:
-        logger.info("Searching for '%s'...", query)
+    # def search_and_store(self, query: str) -> str:
+    #     logger.info("Searching for '%s'...", query)
 
-        run_path = self._make_run_filename("run")
+    #     run_path = self._make_run_filename("run")
+    #     added = skipped = 0
+
+    #     # open both master (append) and run (write fresh)
+    #     with open(self.master_path, "a", encoding="utf-8") as master_f, \
+    #          open(run_path,        "w", encoding="utf-8") as run_f:
+
+    #         for page in range(1, self.crawler_config.pages + 1):
+    #             logger.info("Page %d/%d", page, self.crawler_config.pages)
+    #             results = self._make_searx_request(query, page)
+    #             if not results:
+    #                 logger.warning("No results on page %d", page)
+    #                 continue
+
+    #             for hit in results:
+    #                 url = hit.get("url")
+    #                 if not url:
+    #                     logger.warning("Skipping hit with no URL")
+    #                     continue
+
+    #                 if url in self.seen_urls:
+    #                     skipped += 1
+    #                     continue
+
+    #                 record = {
+    #                     "title":           hit.get("title", ""),
+    #                     "href":            url,
+    #                     "content":         hit.get("content", ""),
+    #                     "stored_at":       datetime.utcnow().isoformat(),
+    #                     "original_query":  query,
+    #                     "page":            page,
+    #                     "engine":          hit.get("engine", "unknown"),
+    #                 }
+
+    #                 line = json.dumps(record, ensure_ascii=False)
+    #                 master_f.write(line + "\n")
+    #                 master_f.flush()
+    #                 os.fsync(master_f.fileno())
+
+    #                 run_f.write(line + "\n")
+    #                 run_f.flush()
+    #                 os.fsync(run_f.fileno())
+
+    #                 self.seen_urls.add(url)
+    #                 added += 1
+
+    #     logger.info("Done. %d new, %d skipped.", added, skipped)
+    #     return run_path
+
+    # def search_and_store_batch(self, queries: list[str], run_path: Optional[str] = None) -> str:
+    #     """Batch search with optional run path reuse."""
+    #     logger.info("Batch search for %d queries...", len(queries))
+    #     run_path = self._get_run_path("batch_run", run_path)  # Use provided path or create new
+    #     total_added = total_skipped = 0
+        
+    #     with open(self.master_path, "a", encoding="utf-8") as master_f, \
+    #          open(run_path, "w", encoding="utf-8") as run_f:  # Always overwrite if exists
+            
+    #         for i, query in enumerate(queries, start=1):
+    #             logger.info("Query %d/%d: '%s'", i, len(queries), query)
+    #             for page in range(1, self.crawler_config.pages + 1):
+    #                 results = self._make_searx_request(query, page)
+    #                 if not results:
+    #                     logger.warning("No results on page %d for '%s'", page, query)
+    #                     continue
+    #                 for hit in results:
+    #                     url = hit.get("url")
+    #                     if not url:
+    #                         logger.warning("Skipping hit with no URL")
+    #                         continue
+    #                     if url in self.seen_urls:
+    #                         total_skipped += 1
+    #                         continue
+    #                     record = {
+    #                         "title":           hit.get("title", ""),
+    #                         "href":            url,
+    #                         "content":         hit.get("content", ""),
+    #                         "stored_at":       datetime.utcnow().isoformat(),
+    #                         "original_query":  query,
+    #                         "page":            page,
+    #                         "engine":          hit.get("engine", "unknown"),
+    #                     }
+    #                     line = json.dumps(record, ensure_ascii=False)
+    #                     master_f.write(line + "\n")
+    #                     master_f.flush()
+    #                     os.fsync(master_f.fileno())
+    #                     run_f.write(line + "\n")
+    #                     run_f.flush()
+    #                     os.fsync(run_f.fileno())
+    #                     self.seen_urls.add(url)
+    #                     total_added += 1
+
+    #     logger.info("Batch done. %d new, %d skipped.", total_added, total_skipped)
+    #     return run_path
+
+    # def search_and_store_images(self, query: str) -> str:
+    #     """Search for images only (single query)."""
+    #     logger.info("Searching IMAGES for '%s'...", query)
+
+    #     run_path = self._make_run_filename("run_images")
+    #     added = skipped = 0
+
+    #     with open(self.master_path, "a", encoding="utf-8") as master_f, \
+    #          open(run_path, "w", encoding="utf-8") as run_f:
+
+    #         for page in range(1, self.crawler_config.pages + 1):
+    #             logger.info("Image page %d/%d", page, self.crawler_config.pages)
+    #             results = self._make_searx_image_request(query, page)
+    #             if not results:
+    #                 logger.warning("No image results on page %d", page)
+    #                 continue
+
+    #             for hit in results:
+    #                 url = hit.get("url")
+    #                 if not url:
+    #                     logger.warning("Skipping image hit with no URL")
+    #                     continue
+
+    #                 if url in self.seen_urls:
+    #                     skipped += 1
+    #                     continue
+
+    #                 record = {
+    #                     "title":          hit.get("title", ""),
+    #                     "href":           url,
+    #                     "content":        hit.get("content", ""),
+    #                     "stored_at":      datetime.utcnow().isoformat(),
+    #                     "original_query": query,
+    #                     "page":           page,
+    #                     "engine":         hit.get("engine", "unknown"),
+    #                     "type":           "image",          # explicit flag
+    #                     "img_src":        hit.get("img_src"),
+    #                     "thumbnail_src":  hit.get("thumbnail_src"),
+    #                 }
+
+    #                 line = json.dumps(record, ensure_ascii=False)
+    #                 master_f.write(line + "\n")
+    #                 master_f.flush()
+    #                 os.fsync(master_f.fileno())
+
+    #                 run_f.write(line + "\n")
+    #                 run_f.flush()
+    #                 os.fsync(run_f.fileno())
+
+    #                 self.seen_urls.add(url)
+    #                 added += 1
+
+    #     logger.info("Image search done. %d new, %d skipped.", added, skipped)
+    #     return run_path
+    
+    # def search_and_store_images_batch(self, queries: list[str], run_path: Optional[str] = None) -> str:
+
+    #     """Batch image search with optional run path reuse."""
+    #     logger.info("Batch image search for %d queries...", len(queries))
+    #     run_path = self._get_run_path("batch_images", run_path)  # Use provided path or create new
+    #     total_added = total_skipped = 0
+        
+    #     with open(self.master_path, "a", encoding="utf-8") as master_f, \
+    #          open(run_path, "w", encoding="utf-8") as run_f:  # Always overwrite if exists
+            
+    #         for i, query in enumerate(queries, start=1):
+    #             logger.info("Image query %d/%d: '%s'", i, len(queries), query)
+    #             for page in range(1, self.crawler_config.pages + 1):
+    #                 results = self._make_searx_image_request(query, page)
+    #                 if not results:
+    #                     logger.warning("No image results on page %d for '%s'", page, query)
+    #                     continue
+    #                 for hit in results:
+    #                     url = hit.get("url")
+    #                     if not url:
+    #                         logger.warning("Skipping image hit with no URL")
+    #                         continue
+    #                     if url in self.seen_urls:
+    #                         total_skipped += 1
+    #                         continue
+    #                     record = {
+    #                         "title":          hit.get("title", ""),
+    #                         "href":           url,
+    #                         "content":        hit.get("content", ""),
+    #                         "stored_at":      datetime.utcnow().isoformat(),
+    #                         "original_query": query,
+    #                         "page":           page,
+    #                         "engine":         hit.get("engine", "unknown"),
+    #                         "type":           "image",
+    #                         "img_src":        hit.get("img_src"),
+    #                         "thumbnail_src":  hit.get("thumbnail_src"),
+    #                     }
+    #                     line = json.dumps(record, ensure_ascii=False)
+    #                     master_f.write(line + "\n")
+    #                     master_f.flush()
+    #                     os.fsync(master_f.fileno())
+    #                     run_f.write(line + "\n")
+    #                     run_f.flush()
+    #                     os.fsync(run_f.fileno())
+    #                     self.seen_urls.add(url)
+    #                     total_added += 1
+
+    #     logger.info("Batch image search done. %d new, %d skipped.", total_added, total_skipped)
+    #     return run_path
+    
+    def _process_single_query(self, query: str, master_f, run_f, is_image=False) -> tuple[int, int]:
         added = skipped = 0
+        make_request = self._make_searx_image_request if is_image else self._make_searx_request
 
-        # open both master (append) and run (write fresh)
-        with open(self.master_path, "a", encoding="utf-8") as master_f, \
-             open(run_path,        "w", encoding="utf-8") as run_f:
-
-            for page in range(1, self.crawler_config.pages + 1):
-                logger.info("Page %d/%d", page, self.crawler_config.pages)
-                results = self._make_searx_request(query, page)
-                if not results:
-                    logger.warning("No results on page %d", page)
+        for page in range(1, self.crawler_config.pages + 1):
+            results = make_request(query, page)
+            if not results:
+                continue
+            for hit in results:
+                url = hit.get("url")
+                if not url:
                     continue
-
-                for hit in results:
-                    url = hit.get("url")
-                    if not url:
-                        logger.warning("Skipping hit with no URL")
-                        continue
-
+                with self.lock:
                     if url in self.seen_urls:
                         skipped += 1
                         continue
+                    self.seen_urls.add(url)
 
-                    record = {
-                        "title":           hit.get("title", ""),
-                        "href":            url,
-                        "content":         hit.get("content", ""),
-                        "stored_at":       datetime.utcnow().isoformat(),
-                        "original_query":  query,
-                        "page":            page,
-                        "engine":          hit.get("engine", "unknown"),
-                    }
+                record = {
+                    "title": hit.get("title", ""),
+                    "href": url,
+                    "content": hit.get("content", ""),
+                    "stored_at": datetime.utcnow().isoformat(),
+                    "original_query": query,
+                    "page": page,
+                    "engine": hit.get("engine", "unknown"),
+                }
+                if is_image:
+                    record.update({
+                        "type": "image",
+                        "img_src": hit.get("img_src"),
+                        "thumbnail_src": hit.get("thumbnail_src"),
+                    })
 
-                    line = json.dumps(record, ensure_ascii=False)
+                line = json.dumps(record, ensure_ascii=False)
+                with self.lock:
                     master_f.write(line + "\n")
                     master_f.flush()
                     os.fsync(master_f.fileno())
-
                     run_f.write(line + "\n")
                     run_f.flush()
                     os.fsync(run_f.fileno())
+                added += 1
+        return added, skipped
 
-                    self.seen_urls.add(url)
-                    added += 1
-
-        logger.info("Done. %d new, %d skipped.", added, skipped)
-        return run_path
-
-    def search_and_store_batch(self, queries: list[str], run_path: Optional[str] = None) -> str:
-        """Batch search with optional run path reuse."""
-        logger.info("Batch search for %d queries...", len(queries))
-        run_path = self._get_run_path("batch_run", run_path)  # Use provided path or create new
+    def search_and_store_batch(self, queries: List[str], run_path: Optional[str] = None) -> str:
+        logger.info("Starting concurrent batch search for %d queries...", len(queries))
+        run_path = self._get_run_path("batch_run", run_path)
         total_added = total_skipped = 0
-        
-        with open(self.master_path, "a", encoding="utf-8") as master_f, \
-             open(run_path, "w", encoding="utf-8") as run_f:  # Always overwrite if exists
-            
-            for i, query in enumerate(queries, start=1):
-                logger.info("Query %d/%d: '%s'", i, len(queries), query)
-                for page in range(1, self.crawler_config.pages + 1):
-                    results = self._make_searx_request(query, page)
-                    if not results:
-                        logger.warning("No results on page %d for '%s'", page, query)
-                        continue
-                    for hit in results:
-                        url = hit.get("url")
-                        if not url:
-                            logger.warning("Skipping hit with no URL")
-                            continue
-                        if url in self.seen_urls:
-                            total_skipped += 1
-                            continue
-                        record = {
-                            "title":           hit.get("title", ""),
-                            "href":            url,
-                            "content":         hit.get("content", ""),
-                            "stored_at":       datetime.utcnow().isoformat(),
-                            "original_query":  query,
-                            "page":            page,
-                            "engine":          hit.get("engine", "unknown"),
-                        }
-                        line = json.dumps(record, ensure_ascii=False)
-                        master_f.write(line + "\n")
-                        master_f.flush()
-                        os.fsync(master_f.fileno())
-                        run_f.write(line + "\n")
-                        run_f.flush()
-                        os.fsync(run_f.fileno())
-                        self.seen_urls.add(url)
-                        total_added += 1
-
-        logger.info("Batch done. %d new, %d skipped.", total_added, total_skipped)
-        return run_path
-
-    def search_and_store_images(self, query: str) -> str:
-        """Search for images only (single query)."""
-        logger.info("Searching IMAGES for '%s'...", query)
-
-        run_path = self._make_run_filename("run_images")
-        added = skipped = 0
 
         with open(self.master_path, "a", encoding="utf-8") as master_f, \
              open(run_path, "w", encoding="utf-8") as run_f:
 
-            for page in range(1, self.crawler_config.pages + 1):
-                logger.info("Image page %d/%d", page, self.crawler_config.pages)
-                results = self._make_searx_image_request(query, page)
-                if not results:
-                    logger.warning("No image results on page %d", page)
-                    continue
+            with ThreadPoolExecutor(max_workers=self.concurrency) as executor:
+                future_to_query = {
+                    executor.submit(self._process_single_query, q, master_f, run_f, False): q
+                    for q in queries
+                }
 
-                for hit in results:
-                    url = hit.get("url")
-                    if not url:
-                        logger.warning("Skipping image hit with no URL")
-                        continue
+                for future in as_completed(future_to_query):
+                    query = future_to_query[future]
+                    try:
+                        added, skipped = future.result()
+                        total_added += added
+                        total_skipped += skipped
+                        logger.debug("Query '%s' done: +%d new, %d skipped", query, added, skipped)
+                    except Exception as exc:
+                        logger.error("Query '%s' generated an exception: %s", query, exc)
 
-                    if url in self.seen_urls:
-                        skipped += 1
-                        continue
-
-                    record = {
-                        "title":          hit.get("title", ""),
-                        "href":           url,
-                        "content":        hit.get("content", ""),
-                        "stored_at":      datetime.utcnow().isoformat(),
-                        "original_query": query,
-                        "page":           page,
-                        "engine":         hit.get("engine", "unknown"),
-                        "type":           "image",          # explicit flag
-                        "img_src":        hit.get("img_src"),
-                        "thumbnail_src":  hit.get("thumbnail_src"),
-                    }
-
-                    line = json.dumps(record, ensure_ascii=False)
-                    master_f.write(line + "\n")
-                    master_f.flush()
-                    os.fsync(master_f.fileno())
-
-                    run_f.write(line + "\n")
-                    run_f.flush()
-                    os.fsync(run_f.fileno())
-
-                    self.seen_urls.add(url)
-                    added += 1
-
-        logger.info("Image search done. %d new, %d skipped.", added, skipped)
+        logger.info("Batch done. %d new, %d skipped.", total_added, total_skipped)
         return run_path
-    
-    def search_and_store_images_batch(self, queries: list[str], run_path: Optional[str] = None) -> str:
-        """Batch image search with optional run path reuse."""
-        logger.info("Batch image search for %d queries...", len(queries))
-        run_path = self._get_run_path("batch_images", run_path)  # Use provided path or create new
+
+    def search_and_store_images_batch(self, queries: List[str], run_path: Optional[str] = None) -> str:
+        logger.info("Starting concurrent batch image search for %d queries...", len(queries))
+        run_path = self._get_run_path("batch_images", run_path)
         total_added = total_skipped = 0
-        
+
         with open(self.master_path, "a", encoding="utf-8") as master_f, \
-             open(run_path, "w", encoding="utf-8") as run_f:  # Always overwrite if exists
-            
-            for i, query in enumerate(queries, start=1):
-                logger.info("Image query %d/%d: '%s'", i, len(queries), query)
-                for page in range(1, self.crawler_config.pages + 1):
-                    results = self._make_searx_image_request(query, page)
-                    if not results:
-                        logger.warning("No image results on page %d for '%s'", page, query)
-                        continue
-                    for hit in results:
-                        url = hit.get("url")
-                        if not url:
-                            logger.warning("Skipping image hit with no URL")
-                            continue
-                        if url in self.seen_urls:
-                            total_skipped += 1
-                            continue
-                        record = {
-                            "title":          hit.get("title", ""),
-                            "href":           url,
-                            "content":        hit.get("content", ""),
-                            "stored_at":      datetime.utcnow().isoformat(),
-                            "original_query": query,
-                            "page":           page,
-                            "engine":         hit.get("engine", "unknown"),
-                            "type":           "image",
-                            "img_src":        hit.get("img_src"),
-                            "thumbnail_src":  hit.get("thumbnail_src"),
-                        }
-                        line = json.dumps(record, ensure_ascii=False)
-                        master_f.write(line + "\n")
-                        master_f.flush()
-                        os.fsync(master_f.fileno())
-                        run_f.write(line + "\n")
-                        run_f.flush()
-                        os.fsync(run_f.fileno())
-                        self.seen_urls.add(url)
-                        total_added += 1
+             open(run_path, "w", encoding="utf-8") as run_f:
+
+            with ThreadPoolExecutor(max_workers=self.concurrency) as executor:
+                future_to_query = {
+                    executor.submit(self._process_single_query, q, master_f, run_f, True): q
+                    for q in queries
+                }
+
+                for future in as_completed(future_to_query):
+                    query = future_to_query[future]
+                    try:
+                        added, skipped = future.result()
+                        total_added += added
+                        total_skipped += skipped
+                        logger.debug("Image query '%s' done: +%d new, %d skipped", query, added, skipped)
+                    except Exception as exc:
+                        logger.error("Image query '%s' generated an exception: %s", query, exc)
 
         logger.info("Batch image search done. %d new, %d skipped.", total_added, total_skipped)
         return run_path
