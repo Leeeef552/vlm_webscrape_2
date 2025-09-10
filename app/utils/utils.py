@@ -23,6 +23,10 @@ def mentions_singapore(text: str, fuzzy_threshold: int = 75) -> bool:
                 return True
     return False
 
-
 def normalize_text(s: str) -> str:
     return re.sub(r'[^a-z0-9]', '', s.lower())
+
+def open_queries_txt(s: str) -> list:
+    with open(s, 'r', encoding='utf-8') as file:
+        lines = file.readlines()
+    return [line.strip() for line in lines]

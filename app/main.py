@@ -9,6 +9,7 @@ from .core.scraper import Scraper
 from .core.topic_extractor import TopicExtractor
 from .core.query_expansion import QueryExpansion
 from .utils.logger import logger
+from .utils.utils import open_queries_txt
 
 import time
 
@@ -18,62 +19,8 @@ CONFIG_PATH = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape
 # Number of full pipeline iterations (search → scrape → topics → expand)
 NUM_ITERATIONS = 5
 # Initial root query for the first crawl
-INITIAL_QUERY = [
-    "Singapore history and nation-building",
-    "Singapore government and political landscape",
-    "Singapore economic development and industries",
-    "Singapore society and multiculturalism",
-    "Singapore education system and universities",
-    "Singapore arts, literature, and media",
-    "Singapore national heritage and traditions",
-    "Major Singapore landmarks and architecture",
-    "Singapore nature reserves and biodiversity",
-    "Singapore urban planning and sustainability",
-    "Singapore science, research, and technology",
-    "Transportation, mobility, and logistics in Singapore (MRT, buses, airports, seaports)",
-    "Infrastructure and utilities in Singapore (water, energy, waste)",
-    "Singapore’s international relations and global role",
-    "Security, defence, and national service in Singapore",
-    "Social policies and quality of life in Singapore",
-    "Festivals, events, and cultural celebrations in Singapore",
-    "Singapore food, cuisine, and hawker culture",
-    "Tourism and hospitality in Singapore (attractions, hotels, cruises)",
-    "Iconic districts and neighbourhoods in Singapore (Chinatown, Little India, Kampong Glam, Civic District)",
-    "Housing, HDB towns, and real estate in Singapore",
-    "Law, justice, and public administration in Singapore",
-    "Environment, climate action, and conservation in Singapore",
-    "Healthcare system and public health in Singapore",
-    "Demographics, population, and migration in Singapore",
-    "Religion, languages, and cultural harmony in Singapore",
-    "Sports, recreation, and lifestyle in Singapore",
-    "Business, finance, and trade in Singapore (banking, fintech, MAS)",
-    "Startups, innovation, and the digital economy in Singapore (Smart Nation, GovTech)",
-    "Maritime, aviation, and port/airport hubs in Singapore (PSA, Changi)",
-    "Data governance, privacy, and cybersecurity in Singapore",
-    "Labour market, employment, and skills development in Singapore (SkillsFuture)",
-    "Retail, consumer culture, and e-commerce in Singapore",
-    "Media, broadcasting, and telecommunications in Singapore",
-    "Museums, galleries, and performing arts in Singapore",
-    "Urban design, heritage conservation, and place-making in Singapore",
-    "Environmental sustainability in the built environment (green buildings, parks, corridors)",
-    "Education pathways: MOE schools, ITEs, polytechnics, universities",
-    "Civil society, NGOs, and volunteerism in Singapore",
-    "Rural past, kampong heritage, and historical sites in Singapore",
-    "Singapore public and private transport systems",
-    "Singapore hawker culture and street food",
-    "Singapore iconic tourist destinations and hidden gems",
-    "Singapore cultural districts and heritage trails",
-    "Singapore local cuisine, Michelin-starred & heritage stalls",
-    "Singapore nightlife, entertainment, and leisure hubs",
-    "Singapore shopping and fashion scene",
-    "Singapore sports, recreation, and active lifestyle",
-    "Singapore healthcare and biomedical innovation",
-    "Singapore fintech, start-ups, and entrepreneurship ecosystem",
-    "Singapore smart-city initiatives and digital governance",
-    "Singapore green building and eco-tourism",
-    "Singapore religious diversity and places of worship",
-    "Singapore diaspora and overseas communities"
-]
+queries_path = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/seed_data/seed_queries.txt"
+INITIAL_QUERY = open_queries_txt(queries_path)
 
 
 async def main():
@@ -153,7 +100,7 @@ async def main():
         logger.info("Generating new queries via expansion...")
         expander = QueryExpansion(expand_cfg)
         current_queries = expander.get_queries(4)
-        logger.info(f"Generated {len(current_queries)} queries: {current_queries}")
+        logger.info(f"Generated {len(current_queries)} queries")
 
     logger.info(f"Pipeline run complete. Total time taken: {time.time() - start}")
 
