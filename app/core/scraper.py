@@ -514,7 +514,7 @@ class Scraper:
             except Exception as e:
                 logger.error("Failed to fetch %s: %s", url, e)
                 html = None
-            finally:
+            finally:    
                 await context.close()
         return BeautifulSoup(html, "html.parser") if html else None
         

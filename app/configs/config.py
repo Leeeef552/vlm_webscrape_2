@@ -29,9 +29,9 @@ class TopicExtractorConfig:
     data_file: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data"
     gliner_model_name: str = "urchade/gliner_large-v2.1"
     gliner_threshold: int = 0.9
-    gliner_labels_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_entity_labels.jsonl"
-    abbrev_map_path : str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_lexical_labels.json"
-    seed_entities_file : str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/classified_entities_filtered_sampled_500.jsonl"
+    gliner_labels_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/seed_data/_entity_labels.jsonl"
+    abbrev_map_path : str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/seed_data/_lexical_labels.json"
+    seed_entities_file : str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/seed_data/classified_entities_filtered_sampled_500.jsonl"
     concurrency: int = 16
     output_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities/extracted_entities.json"
     embedding_model: str = "BAAI/bge-m3"

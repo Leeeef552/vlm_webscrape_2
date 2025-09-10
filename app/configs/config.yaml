@@ -21,9 +21,9 @@ topic_extractor:
   data_file: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data"
   gliner_model_name: "gliner-community/gliner_large-v2.5" 
   gliner_threshold: 0.75 # threshold for gliner to decide if its an expected entity fitting to the label (keep it low, we rely on llm to decide relation to singapore)
-  gliner_labels_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_entity_labels.jsonl" 
-  abbrev_map_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/_lexical_labels.json"
-  seed_entities_file: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/schema/classified_entities_filtered_sampled_500.jsonl"
+  gliner_labels_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/seed_data/_entity_labels.jsonl" 
+  abbrev_map_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/seed_data/_lexical_labels.json"
+  seed_entities_file: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/seed_data/classified_entities_filtered_sampled_500.jsonl"
   concurrency: 16 # number of chunks to under go extraction concurrently
   output_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities/extracted_entities.json"
   embedding_model: "BAAI/bge-m3"

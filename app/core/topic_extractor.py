@@ -451,23 +451,23 @@ class TopicExtractor:
         entity_lower = entity.lower().strip()
 
         # 1. fuzzy against seed
-        for seed_text in self._get_all_seed_entities():   # cheap list already in RAM
+        for seed_text in self._get_all_seed_entities():   
             if fuzz.ratio(entity_lower, seed_text.lower()) >= 75:
                 logger.debug(f"Fuzzy match found for '{entity}' against seed: '{seed_text}'")
-                return seed_text
+                return entity  # <-- Return the candidate instead of seed_text
 
         # 2. fuzzy against DB entities (no embedding needed)
         for label, ents in self._get_all_entities().items():
             for db_ent in ents:
                 if fuzz.ratio(entity_lower, db_ent.lower()) >= 75:
                     logger.debug(f"Fuzzy match found for '{entity}' against DB entity: '{db_ent}'")
-                    return db_ent
+                    return entity  # <-- Return the candidate instead of db_ent
 
         # 3. semantic similarity using cached vectors
         try:
             # encode the candidate only once
             cand_vec = self.embedder.encode([entity])
-            cand_vec = cand_vec.astype(np.float32)   # force float32
+            cand_vec = cand_vec.astype(np.float32)
 
             # start with seed vectors (fast, already cached)
             seed_texts, seed_vecs = self._get_seed_entity_vectors()
@@ -478,7 +478,7 @@ class TopicExtractor:
                 if best >= sem_threshold:
                     matched_text = seed_texts[int(sims.argmax())]
                     logger.info(f"Semantic match found for '{entity}' against seed: '{matched_text}' (similarity: {best:.3f})")
-                    return matched_text
+                    return entity  # <-- Return the candidate instead of matched_text
 
             # widen to *all* entities (seed + extracted)
             all_vecs = self._get_all_entity_vectors()
@@ -492,21 +492,20 @@ class TopicExtractor:
             if best >= sem_threshold:
                 matched_text = texts[int(sims.argmax())]
                 logger.info(f"Semantic match found for '{entity}' against DB entity: '{matched_text}' (similarity: {best:.3f})")
-                return matched_text
+                return entity  # <-- Return the candidate instead of matched_text
 
         except Exception as e:
             logger.warning("Semantic check failed for '%s': %s", entity, e)
 
+        # 4. LLM fallback
         context = (
             "You are given an entity phrase. Reply 'yes' or 'no' depending on whether it is related to Singapore."
             "Only reply no if you are certain it is unrelated to Singapore, be it directly or indirectly."
             "If you are unsure, say yes."
         )
 
-        # 4. LLM fallback (unchanged)
         messages = [
-            {"role": "system",
-            "content": context},
+            {"role": "system", "content": context},
             {"role": "user", "content": entity}
         ]
         resp = self.cleaner_client.chat.completions.create(
@@ -516,13 +515,13 @@ class TopicExtractor:
             temperature=0.6
         )
         yes_votes = sum(1 for c in resp.choices if c.message.content.strip().lower().startswith("yes"))
-        result = entity if yes_votes > 1 else None
+        result = entity if yes_votes > 1 else None  # <-- Already returning entity
         if result is not None:
             logger.debug(f"LLM fallback returned positive match for '{entity}'")
         else:
             logger.debug(f"LLM fallback returned no match for '{entity}'")
         return result
-
+    
     
     def _get_all_seed_entities(self) -> List[str]:
         """Get all seed entities from the seed entities file"""
