@@ -1,6 +1,7 @@
 from .logger import logger
 import json
 import re
+from rapidfuzz import fuzz
 
 _SG_VARIANTS = ["singapore", "singaporean", "s'pore"]
 

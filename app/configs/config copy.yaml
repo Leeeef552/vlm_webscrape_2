@@ -1,50 +1,52 @@
 # Configuration file for web scraping pipeline
 crawler:
+  searxng_url: "http://localhost:3628/search" ## searxng docker localhost url
   language: "en" # language of sites to return
-  pages: 1  # number of pages to return from the search result
+  pages: 1  # number of pages to return from the seach result
   time_range: "year" # date back dated for search results
   timeout: 30 # increase if you face timeout error
   links_file_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/links.jsonl" # file path to for tracking of global seen links 
-  searxng_url: "http://localhost:3628/search" ## searxng docker localhost url
   concurrency: 8 # concurrency should be balanced with timeout, higher concurrency will need more timeout 
-
 
 scraper:
   concurrency: 8 # number of links to scrape concurrently
   links_file_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/links.jsonl" 
   images_dir: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/images_metadata"
   markdown_dir: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data"
-  pdf_dir: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/pdf_data"
-  validator_model_name: "google/gemma-3-12b-it" # validator model to validate if url is sg related
+  pdf_dir:  "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/pdf_data"
+  validator_model_name: "Qwen/Qwen3-30B-A3B-Instruct-2507" # validator model to validate if url is sg related
   validator_base_url: "https://pensions-void-floor-knew.trycloudflare.com/v1" # vllm url to host the validator model
+  # validator_base_url: "http://localhost:8124/v1" # vllm url to host the validator model
+
 
 
 topic_extractor:
-  concurrency: 32 # number of chunks to undergo extraction concurrently, can be high
-  fuzzy_threshold: 85
-  semantic_threshold: 0.85
   data_file: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data"
-  labels_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/seed_data/_entity_labels.jsonl" 
+  gliner_model_name: "gliner-community/gliner_large-v2.5" 
+  gliner_threshold: 0.75 # threshold for gliner to decide if its an expected entity fitting to the label (keep it low, we rely on llm to decide relation to singapore)
+  gliner_labels_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/seed_data/_entity_labels.jsonl" 
   abbrev_map_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/seed_data/_lexical_labels.json"
   seed_entities_file: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/seed_data/classified_entities_filtered_sampled_500.jsonl"
+  concurrency: 16 # number of chunks to under go extraction concurrently
   output_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities/extracted_entities.json"
-  db_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities"
   embedding_model: "google/embeddinggemma-300m"
-  ner_base_url: "https://jefferson-authentic-technique-researchers.trycloudflare.com/v1"
-  ner_model_name: "Qwen/Qwen3-30B-A3B-Instruct-2507"
+  db_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities"
   cleaner_model_name: "unsloth/Llama-3.2-3B-Instruct" # cleaner model to clean scraped text from website
   cleaner_base_url: "https://emperor-concerning-kurt-hawk.trycloudflare.com/v1"
+  # cleaner_base_url: "http://localhost:8125/v1" # vllm url to host the cleaner model 
   validator_model_name: "google/gemma-3-12b-it" # validator model to validate if entity is sg related
   validator_base_url: "https://pensions-void-floor-knew.trycloudflare.com/v1" # vllm url to host the validator model
+  # validator_base_url: "http://localhost:8124/v1" # vllm url to host the validator model 
 
 
 query_expansion:
+  db_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities"
+  model_name: "google/gemma-3-12b-it" # query expansion model
+  # base_url: "http://localhost:8124/v1"
+  base_url: "https://pensions-void-floor-knew.trycloudflare.com/v1"
   num_queries_per_entity: 6 # number of queries to create per entity
   num_queries_per_labels: 6
-  n_labels: 6 # recommended to keep this fixed, labels are generally fixed to the labels specified in labels_path; unless user changes between runs
+  n_labels: 6 # recommended to keep this fixed, labels are generally fixed to the labels specified in gliner_labels_path; unless user changes between runs
   n_entities: 0.05 # proportion of under discovered entities to extract from KB
   entities_cap: 128 # ceiling to cap num of entities extracted from KB 
-  db_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities"
   queries_file_path: "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/queries.text"
-  base_url: "https://pensions-void-floor-knew.trycloudflare.com/v1"
-  model_name: "google/gemma-3-12b-it" # query expansion model

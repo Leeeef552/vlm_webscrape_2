@@ -257,9 +257,7 @@ class SingaporeFilterSync:
             system = (
                 "You are given the title, URL, and a short snippet of a web page. "
                 "Reply 'yes' or 'no' depending on whether it is related to Singapore. "
-                "Only reply 'no' if you are certain it is unrelated to Singapore, "
-                "be it directly or indirectly. If unsure, say 'yes'."
-            )
+                )
 
             resp = self.client.chat.completions.create(
                 model=self.model_name,
@@ -269,7 +267,7 @@ class SingaporeFilterSync:
                 ],
                 n=3,
                 temperature=0.3,
-                max_tokens=1,
+                max_completion_tokens=3,
             )
 
             yes_votes = sum(

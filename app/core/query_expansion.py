@@ -388,6 +388,7 @@ class QueryExpansion:
     # ---------- DB ----------
     def _conn(self):
         return sqlite3.connect(self.db_path)
+    
 
     # ==========================================
     # Graph extraction
@@ -744,6 +745,11 @@ class QueryExpansion:
             "average_degree": sum(dict(G.degree()).values()) / G.number_of_nodes(),
         }
     
+    def refresh_cache(self):
+        """Clears the internal cache and forces a reload from the database."""
+        self._cache = _GraphCache(self)
+        self._cache.ensure_metrics()
+        logger.info("QueryExpansion cache refreshed from database.")
 
 
 def main():

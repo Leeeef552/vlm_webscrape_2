@@ -9,49 +9,64 @@ class CrawlerConfig:
     language: str = "en"
     pages: int = 1
     time_range: str = "year"
-    timeout: int = 4
+    timeout: int = 25
     links_file_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/global_links.jsonl"
-    searxng_url: str = "http://localhost:3628/"
+    searxng_url: str = "http://localhost:3628/search"
     concurrency: int = 8
+
 
 @dataclass
 class ScraperConfig:
+    # -- configs -- #
     concurrency: int = 4
+    # -- file path and data --- #
     links_file_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/raw_links/links.jsonl"
     images_dir: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/images_metadata"
     markdown_dir: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data"
     pdf_dir: str =  "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/pdf_data"
+    # -- models -- # 
     validator_model_name: str = "google/gemma-3-12b-it"
     validator_base_url: str = "http://localhost:8124/v1"
+
 
 @dataclass
 class TopicExtractorConfig:
+    # -- configs -- #
+    concurrency: int = 32
+    fuzzy_threshold: int = 85
+    semantic_threshold: float = 0.85
+    # -- file path and data --- #
     data_file: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/text_data"
-    gliner_model_name: str = "urchade/gliner_large-v2.1"
-    gliner_threshold: int = 0.9
-    gliner_labels_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/seed_data/_entity_labels.jsonl"
+    labels_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/seed_data/_entity_labels.jsonl"
     abbrev_map_path : str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/seed_data/_lexical_labels.json"
     seed_entities_file : str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/seed_data/classified_entities_filtered_sampled_500.jsonl"
-    concurrency: int = 16
     output_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities/extracted_entities.json"
-    embedding_model: str = "BAAI/bge-m3"
     db_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities"
+    # -- models -- # 
+    embedding_model: str = "google/embeddinggemma-300m"
+    ner_base_url: str = "https://jefferson-authentic-technique-researchers.trycloudflare.com/v1"
+    ner_model_name: str = "Qwen/Qwen3-30B-A3B-Instruct-2507" 
     cleaner_model_name: str = "unsloth/Llama-3.2-3B-Instruct"
-    cleaner_base_url: str = "http://localhost:8125/v1"
+    cleaner_base_url: str = "https://emperor-concerning-kurt-hawk.trycloudflare.com/v1"
     validator_model_name: str = "google/gemma-3-12b-it"
-    validator_base_url: str = "http://localhost:8124/v1"
+    validator_base_url: str = "https://pensions-void-floor-knew.trycloudflare.com/v1"
+
 
 @dataclass
 class QueryExpansionConfig:
+    # -- configs -- #
+    num_queries_per_entity: int = 6
+    num_queries_per_labels: int = 6
+    n_labels: int = 5                       # number of labels to extract (should be between 1 to max number of labels specified to the gliner model)
+    n_entities: float = 0.05                # 1% of graph at most
+    entities_cap: int = 128                 # capped at 128 entities extracted    
+    # -- file path and data --- #
     db_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/entities"
+    queries_file_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/queries.text"
+    # -- models -- # 
     base_url: str = "http://localhost:8124/v1"
     model_name: str = "google/gemma-3-12b-it"
-    num_queries_per_entity: int = 4
-    num_queries_per_labels: int = 4
-    n_labels: int = 5 # number of labels to extract (should be between 1 to max number of labels specified to the gliner model)
-    n_entities: float = 0.05 # 1% of graph at most
-    entities_cap: int = 64 # capped at 128 entities extracted
-    queries_file_path: str = "/home/leeeefun681/volume/eefun/webscraping/scraping/vlm_webscrape/app/storage/queries.text"
+    
 
 def load_config(file_path):
     config_classes = {}
