@@ -249,32 +249,34 @@ class SingaporeFilterSync:
         self.max_workers = max_workers
 
     def _is_singapore_related(self, entry: Dict[str, Any]) -> bool:
-            title = entry.get("title", "").strip()
-            href = entry.get("href", "").strip()
-            content = entry.get("content", entry.get("description", "")).strip()
-            prompt = f"Title: {title}\nURL: {href}\nSnippet: {content}"
+        title = entry.get("title", "").strip()
+        href = entry.get("href", "").strip()
+        content = entry.get("content", entry.get("description", "")).strip()
+        content = content[:5000]
+        prompt = f"Title: {title}\nURL: {href}\nSnippet: {content}"
 
-            system = (
-                "You are given the title, URL, and a short snippet of a web page. "
-                "Reply 'yes' or 'no' depending on whether it is related to Singapore. "
-                )
-
-            resp = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": prompt}
-                ],
-                n=3,
-                temperature=0.3,
-                max_completion_tokens=3,
+        system = (
+            "You are given the title, URL, and a short snippet of a web page."
+            "Reply 'yes' or 'no' depending on whether it is related to Singapore."
+            "Only reply 'yes' if you are 100 percent certain it is about or related to Singapore"
             )
 
-            yes_votes = sum(
-                1 for c in resp.choices
-                if c.message.content.strip().lower().startswith("yes")
-            )
-            return yes_votes > 1
+        resp = self.client.chat.completions.create(
+            model=self.model_name,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": prompt}
+            ],
+            n=3,
+            temperature=0.3,
+            max_completion_tokens=5,
+        )
+
+        yes_votes = sum(
+            1 for c in resp.choices
+            if c.message.content.strip().lower().startswith("yes")
+        )
+        return yes_votes > 1
 
     def filter_entries(self, file_path: str) -> List[str]:
         entries: List[Dict[str, Any]] = []
@@ -299,7 +301,7 @@ class SingaporeFilterSync:
                         }
                         entries.append(entry)
                     except json.JSONDecodeError as e:
-                        logger.error(f"{e}: Invalid JSON line in: {file_path} at {line}")
+                        logger.error(f"{e}: Invalid JSON line in: {file_path}")
         except FileNotFoundError as e:
             logger.error(f"{e}: JSONL file not found: {file_path}")
             return []

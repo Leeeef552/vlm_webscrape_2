@@ -32,18 +32,6 @@
 - entities, objects, scenes/events/concepts
 
 
-```bash
-CUDA_VISIBLE_DEVICES=0 vllm serve google/gemma-3-12b-it --gpu-memory-utilization 0.85 --port 8124 --max-model-len 16k
-CUDA_VISIBLE_DEVICES=2 vllm serve unsloth/Llama-3.2-3B-Instruct --gpu-memory-utilization 0.5 --port 8125 --max-model-len 16k
-
-CUDA_VISIBLE_DEVICES=4 vllm serve google/gemma-3-12b-it --port 8124 --gpu-memory-utilization 0.85 --max-model-len 24k
-CUDA_VISIBLE_DEVICES=3 vllm serve Qwen/Qwen3-30B-A3B-Instruct-2507 --port 8123 --gpu-memory-utilization 0.85 --max-model-len 16k
-CUDA_VISIBLE_DEVICES=2 vllm serve unsloth/Llama-3.2-3B-Instruct --gpu-memory-utilization 0.85 --port 8125 --max-model-len 16k
-```
-
-## Query Expansion
-
-
 ## Current Limitations:
 1. Too many request on searxng
 
@@ -53,6 +41,13 @@ CUDA_VISIBLE_DEVICES=2 vllm serve unsloth/Llama-3.2-3B-Instruct --gpu-memory-uti
 
 
 
-
 ### tweaks:
-1. fix the immeadialy write for text and image 
+```bash
+CUDA_VISIBLE_DEVICES=3 vllm serve Qwen/Qwen3-30B-A3B-Instruct-2507 --port 8123 --gpu-memory-utilization 0.85 --max-model-len 16k
+CUDA_VISIBLE_DEVICES=4 vllm serve google/gemma-3-12b-it --port 8124 --gpu-memory-utilization 0.85 --max-model-len 24k
+CUDA_VISIBLE_DEVICES=5 vllm serve unsloth/Llama-3.2-3B-Instruct --port 8125 --gpu-memory-utilization 0.8 --max-model-len 80k
+
+cloudflared tunnel --url http://localhost:8123
+cloudflared tunnel --url http://localhost:8124
+cloudflared tunnel --url http://localhost:8125
+```

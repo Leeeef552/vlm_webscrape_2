@@ -9,6 +9,7 @@ from typing import Optional
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional, List
+from .scraper import SingaporeFilterSync  # adjust path accordingly
 
 
 class Crawler:
@@ -147,14 +148,34 @@ class Crawler:
             logger.info("Empty image results for query=%r page=%d.", query, page)
         return results
     
-    def _process_single_query(self, query: str, master_f, run_f, is_image=False) -> tuple[int, int]:
+    def _process_single_query(self, query: str, master_f, run_f, is_image: bool = False, batch_size: int = 100, singapore_filter: Optional[SingaporeFilterSync] = None) -> tuple[int, int]:
         added = skipped = 0
         make_request = self._make_searx_image_request if is_image else self._make_searx_request
+
+        batch = []
+
+        def flush_batch(filtered_batch):
+            nonlocal added
+            if not filtered_batch:
+                return
+            lines = [json.dumps(record, ensure_ascii=False) for record in filtered_batch]
+            data = "\n".join(lines) + "\n"
+            with self.lock:
+                master_f.write(data)
+                master_f.flush()
+                os.fsync(master_f.fileno())
+                run_f.write(data)
+                run_f.flush()
+                os.fsync(run_f.fileno())
+            added += len(filtered_batch)
 
         for page in range(1, self.crawler_config.pages + 1):
             results = make_request(query, page)
             if not results:
                 continue
+
+            # Prepare temporary list of candidate entries
+            candidates = []
             for hit in results:
                 url = hit.get("url")
                 if not url:
@@ -181,28 +202,66 @@ class Crawler:
                         "thumbnail_src": hit.get("thumbnail_src"),
                     })
 
-                line = json.dumps(record, ensure_ascii=False)
-                with self.lock:
-                    master_f.write(line + "\n")
-                    master_f.flush()
-                    os.fsync(master_f.fileno())
-                    run_f.write(line + "\n")
-                    run_f.flush()
-                    os.fsync(run_f.fileno())
-                added += 1
+                candidates.append(record)
+
+            # Apply Singapore relevance filter if enabled
+            if singapore_filter and candidates:
+                try:
+                    # Create temporary file with candidates for filtering
+                    temp_path = f"/tmp/temp_sg_check_{int(time.time() * 1000)}.jsonl"
+                    with open(temp_path, "w") as tmp_f:
+                        for c in candidates:
+                            tmp_f.write(json.dumps(c) + "\n")
+
+                    sg_hrefs = singapore_filter.filter_entries(temp_path)
+                    filtered_candidates = [c for c in candidates if c["href"] in sg_hrefs]
+
+                    os.remove(temp_path)  # cleanup
+                except Exception as e:
+                    logger.error("Singapore filter failed: %s", e)
+                    filtered_candidates = candidates  # fallback to all
+            else:
+                filtered_candidates = candidates
+
+            # Add filtered candidates to batch
+            batch.extend(filtered_candidates)
+
+            # Flush when batch is full
+            while len(batch) >= batch_size:
+                flush_batch(batch[:batch_size])
+                batch = batch[batch_size:]
+
+        # Flush remaining items
+        flush_batch(batch)
         return added, skipped
 
     def search_and_store_batch(self, queries: List[str], run_path: Optional[str] = None) -> str:
         logger.info("Starting concurrent batch search for %d queries...", len(queries))
         run_path = self._get_run_path("batch_run", run_path)
+
+        # Initialize Singapore filter
+        singapore_filter = SingaporeFilterSync(
+            base_url=self.crawler_config.validator_base_url,
+            model_name=self.crawler_config.validator_model_name,
+            max_workers=self.concurrency,
+        )
+
         total_added = total_skipped = 0
 
         with open(self.master_path, "a", encoding="utf-8") as master_f, \
-             open(run_path, "w", encoding="utf-8") as run_f:
+            open(run_path, "w", encoding="utf-8") as run_f:
 
             with ThreadPoolExecutor(max_workers=self.concurrency) as executor:
                 future_to_query = {
-                    executor.submit(self._process_single_query, q, master_f, run_f, False): q
+                    executor.submit(
+                        self._process_single_query,
+                        q,
+                        master_f,
+                        run_f,
+                        False,
+                        100,
+                        singapore_filter,
+                    ): q
                     for q in queries
                 }
 
@@ -222,14 +281,30 @@ class Crawler:
     def search_and_store_images_batch(self, queries: List[str], run_path: Optional[str] = None) -> str:
         logger.info("Starting concurrent batch image search for %d queries...", len(queries))
         run_path = self._get_run_path("batch_images", run_path)
+
+        # Reuse same SingaporeFilter instance
+        singapore_filter = SingaporeFilterSync(
+            base_url=self.crawler_config.validator_base_url,
+            model_name=self.crawler_config.validator_model_name,
+            max_workers=self.concurrency,
+        )
+
         total_added = total_skipped = 0
 
         with open(self.master_path, "a", encoding="utf-8") as master_f, \
-             open(run_path, "w", encoding="utf-8") as run_f:
+            open(run_path, "w", encoding="utf-8") as run_f:
 
             with ThreadPoolExecutor(max_workers=self.concurrency) as executor:
                 future_to_query = {
-                    executor.submit(self._process_single_query, q, master_f, run_f, True): q
+                    executor.submit(
+                        self._process_single_query,
+                        q,
+                        master_f,
+                        run_f,
+                        True,
+                        100,
+                        singapore_filter,
+                    ): q
                     for q in queries
                 }
 

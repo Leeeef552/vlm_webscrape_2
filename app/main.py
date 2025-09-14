@@ -1,4 +1,5 @@
 import asyncio
+import random
 from pathlib import Path
 import json
 from datetime import datetime
@@ -6,17 +7,16 @@ from .configs.config import load_config
 from .core.crawler import Crawler
 from .core.scraper import Scraper
 from .core.topic_extractor import TopicExtractor
-from .core.query_expansion import QueryExpansion, _GraphCache
+from .core.query_expansion import QueryExpansion
 from .utils.logger import logger
 from .utils.utils import open_queries_txt
 import time
 
 # === Configuration Variables ===
 CONFIG_PATH = "/home/intern_volume/intern_volume/eefun/webscraping/scraping/vlm_webscrape/app/configs/config.yaml"
-NUM_ITERATIONS = 3
-queries_path = "/home/intern_volume/intern_volume/eefun/webscraping/scraping/vlm_webscrape/app/seed_data/seed_queries.txt"
-INITIAL_QUERY = open_queries_txt(queries_path)
-INITIAL_QUERY = ["marina bay", "chicken rice"]
+MAX_ITERATIONS = 20
+BATCH_SIZE = 250
+QUERIES_PATH = "/home/intern_volume/intern_volume/eefun/webscraping/scraping/vlm_webscrape/app/seed_data/seed_queries.txt"
 
 async def main():
     start = time.time()
@@ -44,30 +44,34 @@ async def main():
     expander = QueryExpansion(expand_cfg)
     logger.info("QueryExpander initialized successfully.")
 
-    current_queries = INITIAL_QUERY
+    # Load initial queries
+    current_queries = open_queries_txt(QUERIES_PATH)
+    logger.info(f"Loaded {len(current_queries)} initial queries.")
 
-    for i in range(NUM_ITERATIONS):
+    iteration = 0
+
+    while iteration < MAX_ITERATIONS and current_queries:
+        iteration += 1
         print("=" * 29)
-        print(f"====    Iteration {i+1}/{NUM_ITERATIONS}    ====")
+        print(f"====    Iteration {iteration}/{MAX_ITERATIONS}    ====")
         print("=" * 29)
 
-        # 1) WEB SEARCH -----------------------------------------------------
-        if len(current_queries) == 1:
-            q = current_queries[0]
-            logger.info("Crawling web (general) for single query: %s", q)
-            run_links_file = crawler.search_and_store(q)
-        else:
-            logger.info("Crawling web (general) for %d queries", len(current_queries))
-            run_links_file = crawler.search_and_store_batch(current_queries)
+        # Shuffle the current queries
+        random.shuffle(current_queries)
 
-        # 2) IMAGE SEARCH ---------------------------------------------------
-        if len(current_queries) == 1:
-            q = current_queries[0]
-            logger.info("Crawling IMAGES for single query: %s", q)
-            crawler.search_and_store_images(q)
-        else:
-            logger.info("Crawling IMAGES for %d queries", len(current_queries))
-            run_links_file = crawler.search_and_store_images_batch(current_queries, run_links_file)
+        # Take a batch of up to BATCH_SIZE queries
+        batch_queries = current_queries[:BATCH_SIZE]
+        current_queries = current_queries[BATCH_SIZE:]  # Remove the batch from the list
+
+        logger.info(f"Processing batch of {len(batch_queries)} queries...")
+
+        # 1) WEB SEARCH ----------------------------------------------------
+        logger.info("Crawling web (general) for %d queries", len(batch_queries))
+        run_links_file = crawler.search_and_store_batch(batch_queries)
+
+        # 2) IMAGE SEARCH --------------------------------------------------
+        logger.info("Crawling IMAGES for %d queries", len(batch_queries))
+        run_links_file = crawler.search_and_store_images_batch(batch_queries, run_links_file)
 
         # 3) Scraping Content From Links -----------------------------------
         logger.info("Loading links for scraping...")
@@ -92,19 +96,25 @@ async def main():
         # 5) Topic extraction ----------------------------------------------
         logger.info("Extracting topics from markdown output...")
         topic_cfg.data_file = str(md_file)
-        seed_extractor.config.data_file = str(md_file)
-        stats = seed_extractor.extract_from_file()
+        extractor = TopicExtractor(topic_cfg)
+        stats = extractor.extract_from_file()
         logger.info(f"Total unique entities: {stats['total_entities']}")
         for label, count in sorted(stats['counts_by_label'].items(), key=lambda x: x[1], reverse=True):
             logger.info(f"  {label}: {count}")
 
-        # 6) Query expansion ---------------------------
+        # 6) Query expansion -----------------------------------------------
         logger.info("Generating new queries via expansion...")
         expander.refresh_cache()  # Refresh cache with new data
-        current_queries = expander.get_queries(4)
-        logger.info(f"Generated {len(current_queries)} queries")
+        new_queries = expander.get_queries(4)
+        current_queries.extend(new_queries)
+        logger.info(f"Generated {len(new_queries)} new queries. Total queries now: {len(current_queries)}")
 
-    logger.info(f"Pipeline run complete. Total time taken: {time.time() - start}")
+
+    total_seconds = time.time() - start
+    hours = int(total_seconds // 3600)
+    minutes = int((total_seconds % 3600) // 60)
+    seconds = total_seconds % 60
+    logger.info(f"Pipeline run complete. Total time taken: {hours}h {minutes}m {seconds:.2f}s")
 
 if __name__ == "__main__":
     asyncio.run(main())

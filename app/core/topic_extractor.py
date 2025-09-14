@@ -357,7 +357,7 @@ class TopicExtractor:
                     "UPDATE entities SET total_count=? WHERE label_id=? AND entity_text=?",
                     final_entity_updates
                 )
-            # --- CORRECTED SECTION: Fetch entity_ids for ALL entities (new and existing) ---
+
             # Create a set of all (label_id, entity_text) keys for which we need embeddings
             all_entity_keys = set()
             for label, ents in data['counts'].items():
@@ -371,7 +371,7 @@ class TopicExtractor:
                         continue
                     all_entity_keys.add((label_id, ent_clean))
             # Now, fetch entity_ids for ALL these keys
-            entity_keys = [(label_id, ent_clean) for label_id, ent_clean, _ in final_entity_inserts]
+            entity_keys = list(all_entity_keys) # <-- Use the comprehensive set built above
             entity_map = {}
             if entity_keys:
                 # Create a list of placeholders for the query
@@ -383,7 +383,7 @@ class TopicExtractor:
                     WHERE (e.label_id, e.entity_text) IN ({placeholders})
                 """, params)
                 entity_map = {(lid, text): eid for eid, lid, text in c.fetchall()}  
-            # --- END CORRECTED SECTION ---
+
             # Prepare embedding data
             for label, ents in data['counts'].items():
                 for ent, cnt in ents.items():
@@ -524,7 +524,7 @@ class TopicExtractor:
         # 1. fuzzy against seed
         for seed_text in self._get_all_seed_entities():   
             if fuzz.ratio(entity_lower, seed_text.lower()) >= 85:
-                logger.debug(f"Fuzzy match found for '{entity}' against seed: '{seed_text}'")
+                # logger.debug(f"Fuzzy match found for '{entity}' against seed: '{seed_text}'")
                 return entity  # <-- Return the candidate
 
         # 2. semantic similarity using cached vectors
@@ -541,7 +541,7 @@ class TopicExtractor:
                 best = float(sims.max())
                 if best >= sem_threshold:
                     matched_text = seed_texts[int(sims.argmax())]
-                    logger.info(f"Semantic match found for '{entity}' against seed: '{matched_text}' (similarity: {best:.3f})")
+                    # logger.info(f"Semantic match found for '{entity}' against seed: '{matched_text}' (similarity: {best:.3f})")
                     return entity  # <-- Return the candidate instead of matched_text
 
             # widen to *all* entities (seed + extracted)
@@ -555,7 +555,7 @@ class TopicExtractor:
             best = float(sims.max())
             if best >= sem_threshold:
                 matched_text = texts[int(sims.argmax())]
-                logger.info(f"Semantic match found for '{entity}' against DB entity: '{matched_text}' (similarity: {best:.3f})")
+                # logger.info(f"Semantic match found for '{entity}' against DB entity: '{matched_text}' (similarity: {best:.3f})")
                 return entity  # <-- Return the candidate
 
         except Exception as e:
@@ -762,20 +762,38 @@ class TopicExtractor:
         docs_with_label    = defaultdict(int)
         total_docs         = 0
 
-        files = list(self.data_file.glob('*.json')) \
-                if self.data_file.is_dir() else [self.data_file]
+        files = list(self.data_file.glob('*.json')) if self.data_file.is_dir() else [self.data_file]
         logger.info("Processing %d file(s) for extraction", len(files))
 
+        # === Step 1: Estimate total number of chunks across all files ===
+        total_chunks = 0
+        for filepath in files:
+            try:
+                data = json.load(filepath.open(encoding='utf-8'))
+                entries = data if isinstance(data, list) else [data]
+                for entry in entries:
+                    text = entry.get('text_content','') or ''
+                    if len(text) < 10 or not mentions_singapore(text, fuzzy_threshold):
+                        continue
+                    chunks = self._chunk_text_for_NER(text, max_words, overlap_words)
+                    total_chunks += len(chunks)
+            except Exception as e:
+                logger.warning(f"Skipping file due to error during chunk estimation: {filepath} - {e}")
+
+        logger.info(f"Estimated total chunks to process: {total_chunks}")
+
+        # === Step 2: Initialize global progress bar ===
+        pbar = tqdm(total=total_chunks, desc="Chunks processed", unit="chunk")
+
         relevance_cache = getattr(self, '_relevance_cache', {})
-        self._relevance_cache = relevance_cache # Make it persistent for next file/run
-        for filepath in tqdm(files, desc="Files processed"):
+        self._relevance_cache = relevance_cache
+
+        for filepath in files:
             try:
                 data = json.load(filepath.open(encoding='utf-8'))
                 entries = data if isinstance(data, list) else [data]
 
-                # skip file if no SG mention
-                if not any(mentions_singapore(e.get("text_content",""), fuzzy_threshold)
-                           for e in entries):
+                if not any(mentions_singapore(e.get("text_content",""), fuzzy_threshold) for e in entries):
                     continue
 
                 for entry in entries:
@@ -787,13 +805,13 @@ class TopicExtractor:
                     entry_entities_by_label = defaultdict(set)
                     chunks = self._chunk_text_for_NER(text, max_words, overlap_words)
 
-                    # --- begin parallel chunk processing ---
+                    # --- Begin parallel chunk processing ---
                     futures = {}
                     with ThreadPoolExecutor(max_workers=self.concurrency) as exe:
                         for chunk in chunks:
-                            futures[ exe.submit(self._process_chunk, chunk) ] = chunk
+                            futures[exe.submit(self._process_chunk, chunk)] = chunk
 
-                        for fut in tqdm(as_completed(futures), total=len(futures), desc=f"Extracting Entities from chunks in {filepath.name}", leave=False):
+                        for fut in as_completed(futures):
                             try:
                                 preds = fut.result()
                                 for p in preds:
@@ -801,24 +819,18 @@ class TopicExtractor:
                                     text_val= p.get("text","").strip()
                                     if not label or not text_val:
                                         continue
-
-                                    # map to long form if it's a known abbreviation
                                     mapped = self.abbrev_map.get(text_val.lower(), text_val)
-
-                                    # check relevance before adding
                                     matched_entity = self._check_relevance(mapped)
-
                                     if mapped not in relevance_cache:
                                         relevance_cache[mapped] = matched_entity is not None
-
                                     if matched_entity is not None:
-                                        # Use the canonical version (either from seed/DB or original if LLM approved)
                                         raw_by_label[label].append(matched_entity)
                                         entry_entities.add(matched_entity)
                                         entry_entities_by_label[label].add(matched_entity)
-
                             except Exception as e:
                                 logger.warning(f"Error in parallel chunk: {e}")
+                            finally:
+                                pbar.update(1)  # Update progress per chunk
 
                     if entry_entities:
                         total_docs += 1
@@ -833,6 +845,9 @@ class TopicExtractor:
 
             except Exception as e:
                 logger.error(f"Error processing file {filepath}: {e}")
+
+        pbar.close()
+
 
         # Cluster and count
         fuzzy_counts = {
