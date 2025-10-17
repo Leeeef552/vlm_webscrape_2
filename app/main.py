@@ -12,7 +12,7 @@ import time
 import os
 
 # === Configuration Variables ===
-CONFIG_PATH = "/home/leeeefun681/volume/eefun/webscraping2/vlm_webscrape/app/configs/config.yaml"
+CONFIG_PATH = "./app/configs/config.yaml"
 
 async def main():
     start = time.time()
