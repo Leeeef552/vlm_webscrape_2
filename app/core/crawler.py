@@ -3,14 +3,14 @@ import json
 import time
 import requests
 from datetime import datetime
-from ..configs.config import CrawlerConfig
-from ..utils.logger import logger
 from typing import Optional
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional, List
-from .scraper import SingaporeFilterSync  # adjust path accordingly
 
+from ..utils.helper_classes import SingaporeFilterSync
+from ..configs.config import CrawlerConfig
+from ..utils.logger import logger
 
 class Crawler:
     """Searches SearXNG and stores unique links in a master JSONL and in a per‐run JSONL."""
@@ -76,7 +76,8 @@ class Crawler:
             "format": "json",
             "language": self.crawler_config.language,
             "categories": "general",
-            "pageno": page,
+            "safesearch": self.crawler_config.safesearch,
+            "pageno": self.crawler_config.pages,
             "time_range": self.crawler_config.time_range,
         }
 
@@ -218,7 +219,7 @@ class Crawler:
 
                     os.remove(temp_path)  # cleanup
                 except Exception as e:
-                    logger.error("Singapore filter failed: %s", e)
+                    logger.error("Singapore filter failed @@@@@@@: %s", e)
                     filtered_candidates = candidates  # fallback to all
             else:
                 filtered_candidates = candidates
@@ -243,7 +244,7 @@ class Crawler:
         singapore_filter = SingaporeFilterSync(
             base_url=self.crawler_config.validator_base_url,
             model_name=self.crawler_config.validator_model_name,
-            max_workers=self.concurrency,
+            max_workers=self.crawler_config.validator_workers,
         )
 
         total_added = total_skipped = 0
