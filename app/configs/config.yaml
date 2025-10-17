@@ -1,27 +1,55 @@
 # Configuration file for web scraping pipeline
+# --------------------------------------------------
+# You can stick to these defaults or increase concurrency/timeouts to speed up scraping.
+# All file paths below are repo-relative (assuming you run from project root).
+# --------------------------------------------------
+
 main:
-  queries_file: "/home/leeeefun681/volume/eefun/webscraping2/vlm_webscrape/app/seed_data/test.txt"
+  # File containing your list of search queries (one per line)
+  queries_file: "./app/seed_data/test.txt"
+
+  # Number of queries to send to the search engine per batch
   batch_size: 1
-  tracker_file: "/home/leeeefun681/volume/eefun/webscraping2/vlm_webscrape/app/storage/processed_queries.txt"
+
+  # File that tracks which queries have already been processed (to avoid duplicates)
+  tracker_file: "./app/storage/processed_queries.txt"
+
 
 crawler:
-  language: "en" # language of sites to return
-  pages: 1  # number of pages to return from the search result
-  safesearch: 2 # 1 = moderate, 2 = strict, 0=none
-  time_range: "year" # date back dated for search results
-  timeout: 30 # increase if you face timeout error
-  links_file_path: "/home/leeeefun681/volume/eefun/webscraping2/vlm_webscrape/app/storage/raw_links/links.jsonl" # file path to for tracking of global seen links 
-  searxng_url: "http://localhost:3628/search" ## searxng docker localhost url
-  concurrency: 8 # concurrency should be balanced with timeout, higher concurrency will need more timeout 
-  validator_model_name: "Qwen/Qwen3-30B-A3B-Instruct-2507" # validator model to validate if url is sg related
-  validator_base_url: "https://hammer-webster-violin-annotated.trycloudflare.com/v1" # vllm url to host the validator model
-  validator_workers: 5 
+  # Search engine query settings
+  language: "en"          # language of search results
+  pages: 1                # number of pages to fetch per query
+  safesearch: 2           # 0=off, 1=moderate, 2=strict
+  time_range: "year"      # restrict search results by time
+  timeout: 30             # increase if you see frequent timeouts
+
+  # Where to store and read the global link list
+  links_file_path: "./app/storage/raw_links/links.jsonl"
+
+  # SearXNG endpoint (update if your container runs on a different port)
+  searxng_url: "http://localhost:3628/search"
+
+  # Scraper performance tuning
+  concurrency: 8          # higher = faster, but risk of rate limit issues
+
+  # vLLM endpoint used to validate/filter Singapore-related content
+  validator_model_name: "Qwen/Qwen3-30B-A3B-Instruct-2507"
+  validator_base_url: "https://hammer-webster-violin-annotated.trycloudflare.com/v1"
+  validator_workers: 5
+
 
 scraper:
-  concurrency: 1 # number of links to scrape concurrently
-  links_file_path: "/home/leeeefun681/volume/eefun/webscraping2/vlm_webscrape/app/storage/raw_links/links.jsonl" 
-  images_dir: "/home/leeeefun681/volume/eefun/webscraping2/vlm_webscrape/app/storage/images_metadata"
-  markdown_dir: "/home/leeeefun681/volume/eefun/webscraping2/vlm_webscrape/app/storage/text_data"
-  pdf_dir: "/home/leeeefun681/volume/eefun/webscraping2/vlm_webscrape/app/storage/pdf_data"
-  validator_model_name: "Qwen/Qwen3-30B-A3B-Instruct-2507" # validator model to validate if url is sg related
-  validator_base_url: "https://hammer-webster-violin-annotated.trycloudflare.com/v1" # vllm url to host the validator model
+  # Number of pages to scrape concurrently
+  concurrency: 1
+
+  # File that lists links to scrape (same as crawler output)
+  links_file_path: "./app/storage/raw_links/links.jsonl"
+
+  # Directories for different scraped outputs
+  images_dir: "./app/storage/images_metadata"   # image metadata JSONs
+  markdown_dir: "./app/storage/text_data"       # scraped page text in markdown format
+  pdf_dir: "./app/storage/pdf_data"             # optional: extracted PDFs (if implemented)
+
+  # Validator model & endpoint (same as crawler)
+  validator_model_name: "Qwen/Qwen3-30B-A3B-Instruct-2507"
+  validator_base_url: "https://hammer-webster-violin-annotated.trycloudflare.com/v1"
