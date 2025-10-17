@@ -68,7 +68,7 @@ docker run -d --name searxng   -p 8081:8080   -v "$(pwd)/searxng:/etc/searxng"  
 - Open `./searxng/settings.yml` on your host (because we mounted that dir into `/etc/searxng`).
 - Replace it with your tuned config (or copy in your own `settings.yml`).
 - You can do it via VS Code too
-![alt text](image.png)
+![alt text](./assets/image.png)
 
 
 **Restart SearXNG to apply changes:**
@@ -86,7 +86,7 @@ docker restart searxng
 
 ### 4) Point `main.py` at your config
 - Open `app/main.py` and set the config path it loads to match **`./configs/config.yml`** above (some versions store this as a constant or CLI arg). Ensure the file path is correct for your environment.
-![alt text](image-1.png)
+![alt text](./assets/image-1.png)
 
 ### 5) Run
 
@@ -101,7 +101,7 @@ python -m app.main
 ## Outputs & folder structure
 
 On first run, the app auto-creates `./storage` plus subfolders and a progress file:
-![alt text](image-2.png)
+![alt text](./assets/image-2.png)
 
 ```
 ./storage/
